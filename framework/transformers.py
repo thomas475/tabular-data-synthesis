@@ -13,11 +13,13 @@ from racog import RACOG
 from ydata_synthetic.synthesizers.regular import VanilllaGAN
 from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
 
+
 class DummyTransformer(BaseEstimator, TransformerMixin):
     """
     Dummy class that allows us to modify only the methods that interest us,
     avoiding redudancy.
     """
+
     def __init__(self):
         return None
 
@@ -32,6 +34,7 @@ class DummyTransformer(BaseEstimator, TransformerMixin):
             return self.fit(X, **fit_params).transform(X)
         else:
             return self.fit(X, y, **fit_params).transform(X, y)
+
 
 class ProportionalSMOTETransformer(DummyTransformer):
     """
@@ -71,12 +74,13 @@ class ProportionalSMOTETransformer(DummyTransformer):
            intelligence research, 321-357, 2002.
 
     """
+
     def __init__(
-        self,
-        sample_multiplication_factor,
-        random_state=None,
-        k_neighbors=5,
-        n_jobs=None
+            self,
+            sample_multiplication_factor,
+            random_state=None,
+            k_neighbors=5,
+            n_jobs=None
     ):
         self._sample_multiplication_factor = sample_multiplication_factor
         self._random_state = random_state
@@ -117,6 +121,7 @@ class ProportionalSMOTETransformer(DummyTransformer):
 
         return X_resampled
 
+
 class UnlabeledSMOTETransformer(DummyTransformer):
     """
     Transformer that implements a SMOTE sampling routine for unlabeled data.
@@ -154,6 +159,7 @@ class UnlabeledSMOTETransformer(DummyTransformer):
            intelligence research, 321-357, 2002.
 
     """
+
     def __init__(
             self,
             sample_multiplication_factor,
@@ -210,6 +216,7 @@ class UnlabeledSMOTETransformer(DummyTransformer):
 
         return X_resampled
 
+
 class ProportionalRACOGTransformer(DummyTransformer):
     """
     Transformer that implements a proportional RACOG sampling routine. RACOG is
@@ -243,11 +250,12 @@ class ProportionalRACOGTransformer(DummyTransformer):
            1 Jan. 2015, doi: 10.1109/TKDE.2014.2324567.
 
     """
+
     def __init__(
-        self,
-        sample_multiplication_factor,
-        burnin=100,
-        lag=20
+            self,
+            sample_multiplication_factor,
+            burnin=100,
+            lag=20
     ):
         self._sample_multiplication_factor = sample_multiplication_factor
         self._racog = RACOG(burnin, lag)
@@ -303,6 +311,7 @@ class ProportionalRACOGTransformer(DummyTransformer):
 
         return original_and_resampled_dataset
 
+
 class UnlabeledRACOGTransformer(DummyTransformer):
     """
     Transformer that implements a RACOG sampling routine for unlabeled data.
@@ -336,11 +345,12 @@ class UnlabeledRACOGTransformer(DummyTransformer):
            1 Jan. 2015, doi: 10.1109/TKDE.2014.2324567.
 
     """
+
     def __init__(
-        self,
-        sample_multiplication_factor,
-        burnin=100,
-        lag=20
+            self,
+            sample_multiplication_factor,
+            burnin=100,
+            lag=20
     ):
         self._sample_multiplication_factor = sample_multiplication_factor
         self._racog = RACOG(burnin, lag)
@@ -350,7 +360,7 @@ class UnlabeledRACOGTransformer(DummyTransformer):
 
     def transform(self, X, y=None):
         """
-        No labels available so we view the entire set as belonging to one class
+        No labels available, so we view the entire set as belonging to one class
         and use RACOG on the entire dataset. Because RACOG requires there to be
         a target vector, we add a dummy label vector that assigns each sample
         to the same class. Returns original and generated data.
@@ -385,6 +395,7 @@ class UnlabeledRACOGTransformer(DummyTransformer):
 
         return original_and_resampled_dataset
 
+
 class UnlabeledVanillaGANTransformer(DummyTransformer):
     """
     Transformer that implements a sampling routine for a trained vanilla GAN
@@ -418,16 +429,17 @@ class UnlabeledVanillaGANTransformer(DummyTransformer):
     .. [1] https://github.com/ydataai/ydata-synthetic/blob/dev/src/ydata_synthetic/synthesizers/regular/vanillagan/model.py
 
     """
+
     def __init__(
-        self,
-        sample_multiplication_factor,
-        batch_size=128,
-        learning_rate=1e-4,
-        betas=(0.5, 0.9),
-        noise_dim=264,
-        layers_dim=128,
-        epochs=300,
-        sample_interval=50
+            self,
+            sample_multiplication_factor,
+            batch_size=128,
+            learning_rate=1e-4,
+            betas=(0.5, 0.9),
+            noise_dim=264,
+            layers_dim=128,
+            epochs=300,
+            sample_interval=50
     ):
         self._sample_multiplication_factor = sample_multiplication_factor
 

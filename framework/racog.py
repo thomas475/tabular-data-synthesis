@@ -9,6 +9,7 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects import pandas2ri
 
+
 class RACOG:
     """Wrapper for the R implementation of RACOG (Rapidly converging Gibbs algorithm).
 
@@ -39,19 +40,20 @@ class RACOG:
            1 Jan. 2015, doi: 10.1109/TKDE.2014.2324567.
 
     """
+
     def __init__(
-        self,
-        burnin=100,
-        lag=20
+            self,
+            burnin=100,
+            lag=20
     ):
         self._burnin = burnin
         self._lag = lag
 
     def resample(
-        self,
-        dataset,
-        num_instances,
-        class_attr
+            self,
+            dataset,
+            num_instances,
+            class_attr
     ):
         """Perform Gibbs sampling on the given dataset.
 
