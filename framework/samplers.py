@@ -19,7 +19,7 @@ from framework.racog import RACOG
 import warnings
 
 
-class DummyTransformer(BaseEstimator, TransformerMixin):
+class Sampler(BaseEstimator, TransformerMixin):
     """
     Dummy class that allows us to modify only the methods that interest us,
     avoiding redundancy.
@@ -41,7 +41,7 @@ class DummyTransformer(BaseEstimator, TransformerMixin):
             return self.fit(X, y, **fit_params).transform(X, y)
 
 
-class ProportionalSMOTETransformer(DummyTransformer):
+class ProportionalSMOTESampler(Sampler):
     """
     Transformer that implements a proportional SMOTE sampling routine.
     SMOTE is usually used for oversampling in imbalanced datasets, but this
@@ -139,7 +139,7 @@ class ProportionalSMOTETransformer(DummyTransformer):
         return X_resampled
 
 
-class UnlabeledSMOTETransformer(DummyTransformer):
+class UnlabeledSMOTESampler(Sampler):
     """
     Transformer that implements a SMOTE sampling routine for unlabeled data.
     SMOTE is usually used for oversampling in imbalanced datasets, but this
@@ -246,7 +246,7 @@ class UnlabeledSMOTETransformer(DummyTransformer):
         return X_resampled
 
 
-class ProportionalRACOGTransformer(DummyTransformer):
+class ProportionalRACOGSampler(Sampler):
     """
     Transformer that implements a proportional RACOG sampling routine. RACOG is
     a Gibbs sampling routine used for oversampling in imbalanced datasets, but
@@ -341,7 +341,7 @@ class ProportionalRACOGTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class UnlabeledRACOGTransformer(DummyTransformer):
+class UnlabeledRACOGSampler(Sampler):
     """
     Transformer that implements a RACOG sampling routine for unlabeled data.
     RACOG is a Gibbs sampling routine used for oversampling in imbalanced
@@ -425,7 +425,7 @@ class UnlabeledRACOGTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class ProportionalVanillaGANTransformer(DummyTransformer):
+class ProportionalVanillaGANSampler(Sampler):
     """
     Transformer that implements a proportional sampling routine using a vanilla
     GAN implementation. We train and sample from a different vanilla GAN model
@@ -571,7 +571,7 @@ class ProportionalVanillaGANTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class UnlabeledVanillaGANTransformer(DummyTransformer):
+class UnlabeledVanillaGANSampler(Sampler):
     """
     Transformer that implements a sampling routine for a trained vanilla GAN
     model on unlabeled data.
@@ -687,7 +687,7 @@ class UnlabeledVanillaGANTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class ProportionalConditionalGANTransformer(DummyTransformer):
+class ProportionalConditionalGANSampler(Sampler):
     """
     Transformer that implements a proportional sampling routine using a
     conditional GAN implementation. For each class, we sample a proportional
@@ -836,7 +836,7 @@ class ProportionalConditionalGANTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class UnlabeledConditionalGANTransformer(DummyTransformer):
+class UnlabeledConditionalGANSampler(Sampler):
     """
     Transformer that implements an unlabeled sampling routine using a
     conditional GAN implementation where we set the target vector to be all one
@@ -969,7 +969,7 @@ class UnlabeledConditionalGANTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class ProportionalDRAGANTransformer(DummyTransformer):
+class ProportionalDRAGANSampler(Sampler):
     """
     Transformer that implements a proportional sampling routine using a DRAGAN
     implementation. We train and sample from a different DRAGAN model for each
@@ -1124,7 +1124,7 @@ class ProportionalDRAGANTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
-class UnlabeledDRAGANTransformer(DummyTransformer):
+class UnlabeledDRAGANSampler(Sampler):
     """
     Transformer that implements an unlabeled sampling routine using a DRAGAN
     implementation.

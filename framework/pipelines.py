@@ -2,7 +2,7 @@ import category_encoders as ce
 from sklearn.preprocessing import RobustScaler
 
 from framework.encoders import *
-from framework.transformers import *
+from framework.samplers import *
 
 encoders = [
     ce.BackwardDifferenceEncoder(),
@@ -28,9 +28,9 @@ encoders = [
 scaler = RobustScaler()
 
 samplers = [
-    ProportionalSMOTETransformer(),
-    UnlabeledSMOTETransformer(),
-    ProportionalRACOGTransformer(),
-    UnlabeledRACOGTransformer(),
-    UnlabeledVanillaGANTransformer()
+    ProportionalSMOTESampler(),
+    UnlabeledSMOTESampler(),
+    ProportionalRACOGSampler(),
+    UnlabeledRACOGSampler(),
+    UnlabeledVanillaGANSampler()
 ]

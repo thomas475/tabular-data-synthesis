@@ -9,7 +9,7 @@ import category_encoders as ce
 from sklearn.preprocessing import RobustScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from framework.transformers import *
+from framework.samplers import *
 
 
 def racog_test():
@@ -67,7 +67,7 @@ def racog_test_2():
     dataset = pd.DataFrame(iris['data'])
     dataset.columns = iris['feature_names']
 
-    racog = ProportionalRACOGTransformer(1)
+    racog = ProportionalRACOGSampler(1)
     augmented_dataset = racog.fit_transform(dataset)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -80,7 +80,7 @@ def proportional_smote():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    smote = ProportionalSMOTETransformer(1)
+    smote = ProportionalSMOTESampler(1)
     augmented_dataset = smote.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -93,7 +93,7 @@ def unlabeled_smote():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    smote = UnlabeledSMOTETransformer(1)
+    smote = UnlabeledSMOTESampler(1)
     augmented_dataset = smote.fit_transform(X)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -106,7 +106,7 @@ def proportional_racog():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    racog = ProportionalRACOGTransformer(1)
+    racog = ProportionalRACOGSampler(1)
     augmented_dataset = racog.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -119,7 +119,7 @@ def unlabeled_racog():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    racog = UnlabeledRACOGTransformer(1)
+    racog = UnlabeledRACOGSampler(1)
     augmented_dataset = racog.fit_transform(X)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -132,7 +132,7 @@ def vanilla_gan_test_1():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    gan = ProportionalVanillaGANTransformer(1, epochs=50, batch_size=25)
+    gan = ProportionalVanillaGANSampler(1, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -145,7 +145,7 @@ def vanilla_gan_test_2():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    gan = UnlabeledVanillaGANTransformer(1, epochs=50, batch_size=25)
+    gan = UnlabeledVanillaGANSampler(1, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -169,11 +169,11 @@ def pipeline_test():
     sample_multiplication_factor = 1
 
     samplers = [
-        ProportionalSMOTETransformer,
-        UnlabeledSMOTETransformer,
-        ProportionalRACOGTransformer,
-        UnlabeledRACOGTransformer,
-        UnlabeledVanillaGANTransformer
+        ProportionalSMOTESampler,
+        UnlabeledSMOTESampler,
+        ProportionalRACOGSampler,
+        UnlabeledRACOGSampler,
+        UnlabeledVanillaGANSampler
     ]
 
     iris = datasets.load_iris()
@@ -196,7 +196,7 @@ def cgan_test_1():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    gan = ProportionalConditionalGANTransformer(1, epochs=50, batch_size=25)
+    gan = ProportionalConditionalGANSampler(1, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -208,7 +208,7 @@ def cgan_test_2():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    gan = UnlabeledConditionalGANTransformer(1, epochs=50, batch_size=25)
+    gan = UnlabeledConditionalGANSampler(1, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -220,7 +220,7 @@ def dragan_test_1():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    gan = UnlabeledDRAGANTransformer(1, discriminator_updates_per_step=3, epochs=50, batch_size=25)
+    gan = UnlabeledDRAGANSampler(1, discriminator_updates_per_step=3, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
@@ -232,7 +232,7 @@ def dragan_test_2():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    gan = ProportionalDRAGANTransformer(1, discriminator_updates_per_step=3, epochs=50, batch_size=25)
+    gan = ProportionalDRAGANSampler(1, discriminator_updates_per_step=3, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
