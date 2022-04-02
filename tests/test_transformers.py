@@ -126,14 +126,27 @@ def unlabeled_racog():
         print(augmented_dataset)
 
 
-def unlabeled_vanilla_gan():
+def vanilla_gan_test_1():
+    iris = datasets.load_iris()
+    X = pd.DataFrame(iris['data'])
+    X.columns = iris['feature_names']
+    y = iris['target']
+
+    gan = ProportionalVanillaGANTransformer(1, epochs=50, batch_size=25)
+    augmented_dataset = gan.fit_transform(X, y)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
+
+def vanilla_gan_test_2():
     iris = datasets.load_iris()
     X = pd.DataFrame(iris['data'])
     X.columns = iris['feature_names']
     y = iris['target']
 
     gan = UnlabeledVanillaGANTransformer(1, epochs=50, batch_size=25)
-    augmented_dataset = gan.fit_transform(X)
+    augmented_dataset = gan.fit_transform(X, y)
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(augmented_dataset)
@@ -231,10 +244,10 @@ def dragan_test_2():
 # proportional_racog()
 # unlabeled_racog()
 # unlabeled_vanilla_gan()
-# vanilla_gan_test()
+vanilla_gan_test_1()
+vanilla_gan_test_2()
 # pipeline_test()
 # cgan_test_1()
 # cgan_test_2()
-
-#dragan_test_1()
-dragan_test_2()
+# dragan_test_1()
+# dragan_test_2()

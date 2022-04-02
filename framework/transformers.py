@@ -426,6 +426,152 @@ class UnlabeledRACOGTransformer(DummyTransformer):
         return original_and_resampled_dataset
 
 
+class ProportionalVanillaGANTransformer(DummyTransformer):
+    """
+    Transformer that implements a proportional sampling routine using a vanilla
+    GAN implementation. We train and sample from a different vanilla GAN model
+    for each class.
+
+    Parameters
+    ----------
+
+    sample_multiplication_factor : float
+        Determines the relative amount of generated data, i.e. 0 means that no
+        data is generated and 1 means that we generate the same number of data
+        points as we already have.
+
+    batch_size: int, default=128
+        Number of samples used per training step.
+
+    learning_rate: float, default=1e-4
+        The learning rate for each training step.
+
+    betas: tuple, default=(0.5, 0.9)
+        Initial decay rates of Adam when estimating the first and second
+        moments of the gradient.
+
+    noise_dim: int, default=264
+        The length of the noise vector per example.
+
+    layers_dim: int, default=128
+        The dimension of the networks layers.
+
+    epochs: int, default=300
+        Total number of training steps.
+
+    sample_interval: int, default=50
+        The interval between samples.
+
+    References
+    ----------
+
+    .. [1] https://github.com/ydataai/ydata-synthetic/blob/dev/src/ydata_synthetic/synthesizers/regular/vanillagan/model.py
+
+    """
+
+    def __init__(
+            self,
+            sample_multiplication_factor,
+            batch_size=128,
+            learning_rate=1e-4,
+            betas=(0.5, 0.9),
+            noise_dim=264,
+            layers_dim=128,
+            epochs=300,
+            sample_interval=50
+    ):
+        self._sample_multiplication_factor = sample_multiplication_factor
+
+        self._model_parameters = ModelParameters(
+            batch_size=batch_size,
+            lr=learning_rate,
+            betas=betas,
+            noise_dim=noise_dim,
+            layers_dim=layers_dim
+        )
+
+        self._train_parameters = TrainParameters(
+            epochs=epochs,
+            sample_interval=sample_interval
+        )
+
+        self._vanilla_gan = {}
+
+    def fit(self, X, y=None):
+        # reset dragan models
+        self._vanilla_gan = {}
+
+        # change the column titles for easier use
+        original_dataset = pd.DataFrame(X).copy()
+        original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
+        num_cols = original_dataset.columns.copy().tolist()
+
+        # calculate the number of occurrences per class
+        unique, counts = np.unique(y, return_counts=True)
+        occurrences_per_class_dict = dict(zip(unique, counts))
+
+        for class_name in occurrences_per_class_dict:
+            self._vanilla_gan[class_name] = VanilllaGAN(model_parameters=self._model_parameters)
+
+            original_subset = original_dataset.iloc[[x for x in range(0, len(y)) if y[x] == class_name]]
+
+            self._vanilla_gan[class_name].train(
+                data=original_subset,
+                train_arguments=self._train_parameters,
+                num_cols=num_cols,
+                cat_cols=[]
+            )
+
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Sample proportionally from each of the DRAGANs trained on the subsets
+        split by class. Returns the original and generated data.
+        """
+        # just return the original dataset if the sample multiplication factor is too small
+        if int(self._sample_multiplication_factor * len(X)) < 1:
+            return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy()
+
+        # calculate the number of occurrences per class
+        unique, counts = np.unique(y, return_counts=True)
+        occurrences_per_class_dict = dict(zip(unique, counts))
+
+        resampled_subsets_per_class = []
+        for class_name in occurrences_per_class_dict:
+            number_of_samples = int(self._sample_multiplication_factor * occurrences_per_class_dict[class_name])
+            resampled_subset = self._vanilla_gan[class_name].sample(
+                n_samples=number_of_samples,
+            )
+            resampled_subset = pd.DataFrame(resampled_subset)
+
+            # remove excess generated samples
+            resampled_subset = resampled_subset.iloc[:number_of_samples, :]
+
+            resampled_subsets_per_class.append(resampled_subset)
+
+        # join resampled subsets into one dataset
+        resampled_dataset = pd.concat(resampled_subsets_per_class, ignore_index=True)
+
+        # restore the original column titles
+        resampled_dataset.columns = original_dataset.columns
+
+        # join original and generated data into one dataframe
+        original_and_resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            original_and_resampled_dataset.columns = original_column_titles
+
+        return original_and_resampled_dataset
+
+
 class UnlabeledVanillaGANTransformer(DummyTransformer):
     """
     Transformer that implements a sampling routine for a trained vanilla GAN
@@ -828,7 +974,7 @@ class ProportionalDRAGANTransformer(DummyTransformer):
     """
     Transformer that implements a proportional sampling routine using a DRAGAN
     implementation. We train and sample from a different DRAGAN model for each
-    class .
+    class.
 
     Parameters
     ----------
