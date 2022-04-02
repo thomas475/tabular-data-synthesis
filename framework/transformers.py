@@ -10,6 +10,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 
 from imblearn.over_sampling import SMOTE
 from ydata_synthetic.synthesizers.regular import CGAN
+from ydata_synthetic.synthesizers.regular import DRAGAN
 from ydata_synthetic.synthesizers.regular import VanilllaGAN
 from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
 
@@ -809,6 +810,286 @@ class UnlabeledConditionalGANTransformer(DummyTransformer):
         # drop the target column from the generated dataset
         resampled_dataset.columns = range(0, len(resampled_dataset.columns))
         resampled_dataset = resampled_dataset.drop(columns=[len(resampled_dataset.columns) - 1])
+
+        # restore the original column titles
+        resampled_dataset.columns = original_dataset.columns
+
+        # join original and generated data into one dataframe
+        original_and_resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            original_and_resampled_dataset.columns = original_column_titles
+
+        return original_and_resampled_dataset
+
+
+class ProportionalDRAGANTransformer(DummyTransformer):
+    """
+    Transformer that implements a proportional sampling routine using a DRAGAN
+    implementation. We train and sample from a different DRAGAN model for each
+    class .
+
+    Parameters
+    ----------
+
+    sample_multiplication_factor : float
+        Determines the relative amount of generated data, i.e. 0 means that no
+        data is generated and 1 means that we generate the same number of data
+        points as we already have.
+
+    discriminator_updates_per_step : int, default=1
+        Determines how many times the discriminator is updated in each training
+        step.
+
+    batch_size: int, default=128
+        Number of samples used per training step.
+
+    learning_rate: float, default=1e-4
+        The learning rate for each training step.
+
+    betas: tuple, default=(0.5, 0.9)
+        Initial decay rates of Adam when estimating the first and second
+        moments of the gradient.
+
+    noise_dim: int, default=264
+        The length of the noise vector per example.
+
+    layers_dim: int, default=128
+        The dimension of the networks layers.
+
+    epochs: int, default=300
+        Total number of training steps.
+
+    sample_interval: int, default=50
+        The interval between samples.
+
+    References
+    ----------
+
+    .. [1] https://github.com/ydataai/ydata-synthetic/blob/dev/src/ydata_synthetic/synthesizers/regular/dragan/model.py
+
+    """
+
+    def __init__(
+            self,
+            sample_multiplication_factor,
+            discriminator_updates_per_step=1,
+            batch_size=128,
+            learning_rate=1e-4,
+            betas=(0.5, 0.9),
+            noise_dim=264,
+            layers_dim=128,
+            epochs=300,
+            sample_interval=50
+    ):
+        self._sample_multiplication_factor = sample_multiplication_factor
+        self._discriminator_updates_per_step = discriminator_updates_per_step
+
+        self._model_parameters = ModelParameters(
+            batch_size=batch_size,
+            lr=learning_rate,
+            betas=betas,
+            noise_dim=noise_dim,
+            layers_dim=layers_dim
+        )
+
+        self._train_parameters = TrainParameters(
+            epochs=epochs,
+            sample_interval=sample_interval
+        )
+
+        self._dragan = {}
+
+    def fit(self, X, y=None):
+        # reset dragan models
+        self._dragan = {}
+
+        # change the column titles for easier use
+        original_dataset = pd.DataFrame(X).copy()
+        original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
+        num_cols = original_dataset.columns.copy().tolist()
+
+        # calculate the number of occurrences per class
+        unique, counts = np.unique(y, return_counts=True)
+        occurrences_per_class_dict = dict(zip(unique, counts))
+
+        for class_name in occurrences_per_class_dict:
+            self._dragan[class_name] = DRAGAN(
+                model_parameters=self._model_parameters,
+                n_discriminator=self._discriminator_updates_per_step
+            )
+
+            original_subset = original_dataset.iloc[[x for x in range(0, len(y)) if y[x] == class_name]]
+
+            self._dragan[class_name].train(
+                data=original_subset,
+                train_arguments=self._train_parameters,
+                num_cols=num_cols,
+                cat_cols=[]
+            )
+
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Sample proportionally from each of the DRAGANs trained on the subsets
+        split by class. Returns the original and generated data.
+        """
+        # just return the original dataset if the sample multiplication factor is too small
+        if int(self._sample_multiplication_factor * len(X)) < 1:
+            return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy()
+
+        # calculate the number of occurrences per class
+        unique, counts = np.unique(y, return_counts=True)
+        occurrences_per_class_dict = dict(zip(unique, counts))
+
+        resampled_subsets_per_class = []
+        for class_name in occurrences_per_class_dict:
+            number_of_samples = int(self._sample_multiplication_factor * occurrences_per_class_dict[class_name])
+            resampled_subset = self._dragan[class_name].sample(
+                n_samples=number_of_samples,
+            )
+            resampled_subset = pd.DataFrame(resampled_subset)
+
+            # remove excess generated samples
+            resampled_subset = resampled_subset.iloc[:number_of_samples, :]
+
+            resampled_subsets_per_class.append(resampled_subset)
+
+        # join resampled subsets into one dataset
+        resampled_dataset = pd.concat(resampled_subsets_per_class, ignore_index=True)
+
+        # restore the original column titles
+        resampled_dataset.columns = original_dataset.columns
+
+        # join original and generated data into one dataframe
+        original_and_resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            original_and_resampled_dataset.columns = original_column_titles
+
+        return original_and_resampled_dataset
+
+
+class UnlabeledDRAGANTransformer(DummyTransformer):
+    """
+    Transformer that implements an unlabeled sampling routine using a DRAGAN
+    implementation.
+
+    Parameters
+    ----------
+
+    sample_multiplication_factor : float
+        Determines the relative amount of generated data, i.e. 0 means that no
+        data is generated and 1 means that we generate the same number of data
+        points as we already have.
+
+    discriminator_updates_per_step : int, default=1
+        Determines how many times the discriminator is updated in each training
+        step.
+
+    batch_size: int, default=128
+        Number of samples used per training step.
+
+    learning_rate: float, default=1e-4
+        The learning rate for each training step.
+
+    betas: tuple, default=(0.5, 0.9)
+        Initial decay rates of Adam when estimating the first and second
+        moments of the gradient.
+
+    noise_dim: int, default=264
+        The length of the noise vector per example.
+
+    layers_dim: int, default=128
+        The dimension of the networks layers.
+
+    epochs: int, default=300
+        Total number of training steps.
+
+    sample_interval: int, default=50
+        The interval between samples.
+
+    References
+    ----------
+
+    .. [1] https://github.com/ydataai/ydata-synthetic/blob/dev/src/ydata_synthetic/synthesizers/regular/dragan/model.py
+
+    """
+
+    def __init__(
+            self,
+            sample_multiplication_factor,
+            discriminator_updates_per_step=1,
+            batch_size=128,
+            learning_rate=1e-4,
+            betas=(0.5, 0.9),
+            noise_dim=264,
+            layers_dim=128,
+            epochs=300,
+            sample_interval=50
+    ):
+        self._sample_multiplication_factor = sample_multiplication_factor
+
+        self._model_parameters = ModelParameters(
+            batch_size=batch_size,
+            lr=learning_rate,
+            betas=betas,
+            noise_dim=noise_dim,
+            layers_dim=layers_dim
+        )
+
+        self._train_parameters = TrainParameters(
+            epochs=epochs,
+            sample_interval=sample_interval
+        )
+
+        self._dragan = DRAGAN(model_parameters=self._model_parameters, n_discriminator=discriminator_updates_per_step)
+
+    def fit(self, X, y=None):
+        # change the column titles for easier use
+        original_dataset = pd.DataFrame(X).copy()
+        original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
+        num_cols = original_dataset.columns.copy().tolist()
+
+        self._dragan.train(
+            data=original_dataset,
+            train_arguments=self._train_parameters,
+            num_cols=num_cols,
+            cat_cols=[]
+        )
+
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Sample the requested number of samples from the trained GAN. Returns
+        the original and generated data.
+        """
+        # just return the original dataset if the sample multiplication factor is too small
+        if int(self._sample_multiplication_factor * len(X)) < 1:
+            return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy()
+
+        number_of_samples = int(self._sample_multiplication_factor * len(X))
+        resampled_dataset = self._dragan.sample(n_samples=number_of_samples)
+        resampled_dataset = pd.DataFrame(resampled_dataset)
+
+        # remove excess generated samples
+        resampled_dataset = resampled_dataset.iloc[:number_of_samples, :]
 
         # restore the original column titles
         resampled_dataset.columns = original_dataset.columns

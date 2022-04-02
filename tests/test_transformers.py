@@ -201,6 +201,30 @@ def cgan_test_2():
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(augmented_dataset)
 
+def dragan_test_1():
+    iris = datasets.load_iris()
+    X = pd.DataFrame(iris['data'])
+    X.columns = iris['feature_names']
+    y = iris['target']
+
+    gan = UnlabeledDRAGANTransformer(1, discriminator_updates_per_step=3, epochs=50, batch_size=25)
+    augmented_dataset = gan.fit_transform(X, y)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
+def dragan_test_2():
+    iris = datasets.load_iris()
+    X = pd.DataFrame(iris['data'])
+    X.columns = iris['feature_names']
+    y = iris['target']
+
+    gan = ProportionalDRAGANTransformer(1, discriminator_updates_per_step=3, epochs=50, batch_size=25)
+    augmented_dataset = gan.fit_transform(X, y)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 # proportional_smote()
 # unlabeled_smote()
@@ -209,5 +233,8 @@ def cgan_test_2():
 # unlabeled_vanilla_gan()
 # vanilla_gan_test()
 # pipeline_test()
+# cgan_test_1()
+# cgan_test_2()
 
-cgan_test_2()
+#dragan_test_1()
+dragan_test_2()
