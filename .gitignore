@@ -1,2 +1,4 @@
 # file: ~/.gitignore_global
 .idea
+framework/__pycache__
+tests/cache

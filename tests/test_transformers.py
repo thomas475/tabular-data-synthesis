@@ -1,17 +1,16 @@
-import numpy as np
-import pandas as pd
+
+
 from sklearn import datasets
 from sklearn import tree
-import category_encoders as ce
 from sklearn.model_selection import train_test_split
-from ydata_synthetic.synthesizers.regular import VanilllaGAN
-from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
 
 from sklearn.pipeline import Pipeline
-from transformers import *
 import category_encoders as ce
 from sklearn.preprocessing import RobustScaler
 from sklearn.tree import DecisionTreeClassifier
+
+from framework.transformers import *
+
 
 def racog_test():
     iris = datasets.load_iris()
@@ -53,7 +52,8 @@ def racog_test():
     y_train_augmented = complex_tree.predict(X_train_encoded_augmented)
 
     simple_tree.fit(X_train_encoded, y_train)
-    augmented_simple_tree.fit(pd.concat([X_train_encoded, X_train_encoded_augmented], ignore_index=True), np.append(y_train, y_train_augmented))
+    augmented_simple_tree.fit(pd.concat([X_train_encoded, X_train_encoded_augmented], ignore_index=True),
+                              np.append(y_train, y_train_augmented))
 
     print('finishing training ...')
 
@@ -61,16 +61,18 @@ def racog_test():
     print('simple:', simple_tree.score(X_test_encoded, y_test))
     print('augmented:', augmented_simple_tree.score(X_test_encoded, y_test))
 
+
 def racog_test_2():
     iris = datasets.load_iris()
     dataset = pd.DataFrame(iris['data'])
     dataset.columns = iris['feature_names']
 
-    from transformers import ProportionalRACOGTransformer
-
     racog = ProportionalRACOGTransformer(1)
     augmented_dataset = racog.fit_transform(dataset)
-    print(augmented_dataset)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 def proportional_smote():
     iris = datasets.load_iris()
@@ -78,11 +80,12 @@ def proportional_smote():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    from transformers import ProportionalSMOTETransformer
-
     smote = ProportionalSMOTETransformer(1)
     augmented_dataset = smote.fit_transform(X, y)
-    print(augmented_dataset)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 def unlabeled_smote():
     iris = datasets.load_iris()
@@ -90,11 +93,12 @@ def unlabeled_smote():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    from transformers import UnlabeledSMOTETransformer
-
     smote = UnlabeledSMOTETransformer(1)
     augmented_dataset = smote.fit_transform(X)
-    print(augmented_dataset)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 def proportional_racog():
     iris = datasets.load_iris()
@@ -102,11 +106,12 @@ def proportional_racog():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    from transformers import ProportionalRACOGTransformer
-
     racog = ProportionalRACOGTransformer(1)
     augmented_dataset = racog.fit_transform(X, y)
-    print(augmented_dataset)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 def unlabeled_racog():
     iris = datasets.load_iris()
@@ -114,11 +119,12 @@ def unlabeled_racog():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    from transformers import UnlabeledRACOGTransformer
-
     racog = UnlabeledRACOGTransformer(1)
     augmented_dataset = racog.fit_transform(X)
-    print(augmented_dataset)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 def unlabeled_vanilla_gan():
     iris = datasets.load_iris()
@@ -126,11 +132,12 @@ def unlabeled_vanilla_gan():
     X.columns = iris['feature_names']
     y = iris['target']
 
-    from transformers import UnlabeledVanillaGANTransformer
-
-    gan = UnlabeledVanillaGANTransformer(1, epochs=20)
+    gan = UnlabeledVanillaGANTransformer(1, epochs=50, batch_size=25)
     augmented_dataset = gan.fit_transform(X)
-    print(augmented_dataset)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
 
 def load_iris():
     iris = datasets.load_iris()
@@ -139,6 +146,7 @@ def load_iris():
     y = iris['target']
 
     return X, y
+
 
 def pipeline_test():
     complex_tree = DecisionTreeClassifier(max_depth=15)
@@ -169,11 +177,37 @@ def pipeline_test():
 
         print(pipeline.fit_transform(X=X.copy(), y=y.copy()))
 
-#proportional_smote()
-#unlabeled_smote()
-#proportional_racog()
-#unlabeled_racog()
-#unlabeled_vanilla_gan()
-#vanilla_gan_test()
+def cgan_test_1():
+    iris = datasets.load_iris()
+    X = pd.DataFrame(iris['data'])
+    X.columns = iris['feature_names']
+    y = iris['target']
 
-pipeline_test()
+    gan = ProportionalConditionalGANTransformer(1, epochs=50, batch_size=25)
+    augmented_dataset = gan.fit_transform(X, y)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
+def cgan_test_2():
+    iris = datasets.load_iris()
+    X = pd.DataFrame(iris['data'])
+    X.columns = iris['feature_names']
+    y = iris['target']
+
+    gan = UnlabeledConditionalGANTransformer(1, epochs=50, batch_size=25)
+    augmented_dataset = gan.fit_transform(X, y)
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(augmented_dataset)
+
+
+# proportional_smote()
+# unlabeled_smote()
+# proportional_racog()
+# unlabeled_racog()
+# unlabeled_vanilla_gan()
+# vanilla_gan_test()
+# pipeline_test()
+
+cgan_test_2()

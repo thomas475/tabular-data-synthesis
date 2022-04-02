@@ -9,9 +9,14 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from imblearn.over_sampling import SMOTE
-from racog import RACOG
+from ydata_synthetic.synthesizers.regular import CGAN
 from ydata_synthetic.synthesizers.regular import VanilllaGAN
 from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
+
+from framework.racog import RACOG
+
+import warnings
+from typing import Union
 
 
 class DummyTransformer(BaseEstimator, TransformerMixin):
@@ -92,22 +97,26 @@ class ProportionalSMOTETransformer(DummyTransformer):
 
     def transform(self, X, y):
         """
-        Count number of occurences of each class and resample proportionally.
+        Count number of occurrences of each class and resample proportionally.
         Returns original and generated data.
         """
         # just return the original dataset if the sample multiplication factor is too small
         if int(self._sample_multiplication_factor * len(X)) < 1:
             return X
 
-        # calculate the number of occurences per class
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        # calculate the number of occurrences per class
         unique, counts = np.unique(y, return_counts=True)
-        occurences_per_class_dict = dict(zip(unique, counts))
+        occurrences_per_class_dict = dict(zip(unique, counts))
 
         # set the amount of samples per class we want to have; includes original samples
         sampling_strategy = {}
-        for class_name in occurences_per_class_dict:
+        for class_name in occurrences_per_class_dict:
             sampling_strategy[class_name] = int(
-                (self._sample_multiplication_factor + 1) * occurences_per_class_dict[class_name]
+                (self._sample_multiplication_factor + 1) * occurrences_per_class_dict[class_name]
             )
 
         smote = SMOTE(
@@ -117,7 +126,15 @@ class ProportionalSMOTETransformer(DummyTransformer):
             n_jobs=self._n_jobs
         )
 
-        X_resampled, y_resampled = smote.fit_resample(X, y)
+        # filter user warning that fires because we do not use SMOTE simply for balancing the dataset
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            X_resampled, y_resampled = smote.fit_resample(X, y)
+        X_resampled = pd.DataFrame(X_resampled)
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            X_resampled.columns = original_column_titles
 
         return X_resampled
 
@@ -177,7 +194,7 @@ class UnlabeledSMOTETransformer(DummyTransformer):
 
     def transform(self, X, y=None):
         """
-        No labels available so we view the entire set as belonging to one class
+        No labels available, so we view the entire set as belonging to one class
         and use SMOTE on the entire dataset. Because SMOTE requires there to be
         at least two classes, we add a dummy label vector and one dummy data
         entry. After we run SMOTE, we remove the dummy entry. Returns original
@@ -186,6 +203,10 @@ class UnlabeledSMOTETransformer(DummyTransformer):
         # just return the original dataset if the sample multiplication factor is too small
         if int(self._sample_multiplication_factor * len(X)) < 1:
             return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
 
         # create a dummy target vector [ 0 1 ... 1 ]
         y_dummy = np.append(0, np.full((len(X), 1), 1))
@@ -209,10 +230,18 @@ class UnlabeledSMOTETransformer(DummyTransformer):
             n_jobs=self._n_jobs
         )
 
-        X_dummy_resampled, y_dummy_resampled = smote.fit_resample(X_dummy, y_dummy)
+        # filter user warning that fires because we do not use SMOTE simply for balancing the dataset
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            X_dummy_resampled, y_dummy_resampled = smote.fit_resample(X_dummy, y_dummy)
+        X_dummy_resampled = pd.DataFrame(X_dummy_resampled)
 
         # remove the dummy entry
         X_resampled = X_dummy_resampled.iloc[1:, :].reset_index()
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            X_dummy_resampled.columns = original_column_titles
 
         return X_resampled
 
@@ -410,18 +439,26 @@ class UnlabeledVanillaGANTransformer(DummyTransformer):
         points as we already have.
 
     batch_size: int, default=128
+        Number of samples used per training step.
 
     learning_rate: float, default=1e-4
+        The learning rate for each training step.
 
     betas: tuple, default=(0.5, 0.9)
+        Initial decay rates of Adam when estimating the first and second
+        moments of the gradient.
 
     noise_dim: int, default=264
+        The length of the noise vector per example.
 
     layers_dim: int, default=128
+        The dimension of the networks layers.
 
-    epochs: int, default=300,
+    epochs: int, default=300
+        Total number of training steps.
 
     sample_interval: int, default=50
+        The interval between samples.
 
     References
     ----------
@@ -456,12 +493,13 @@ class UnlabeledVanillaGANTransformer(DummyTransformer):
             sample_interval=sample_interval
         )
 
-        self._gan = VanilllaGAN(model_parameters=self._model_parameters)
+        self._vanilla_gan = VanilllaGAN(model_parameters=self._model_parameters)
 
     def fit(self, X, y=None):
         original_dataset = pd.DataFrame(X)
+        original_dataset.columns = _convert_list_to_string_list(original_dataset.columns)
 
-        self._gan.train(
+        self._vanilla_gan.train(
             data=original_dataset,
             train_arguments=self._train_parameters,
             num_cols=original_dataset.columns.tolist(),
@@ -471,10 +509,20 @@ class UnlabeledVanillaGANTransformer(DummyTransformer):
         return self
 
     def transform(self, X, y=None):
-        original_dataset = pd.DataFrame(X)
+        # just return the original dataset if the sample multiplication factor is too small
+        if int(self._sample_multiplication_factor * len(X)) < 1:
+            return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy()
 
         # resample the original dataset
-        resampled_dataset = self._gan.sample(int(self._sample_multiplication_factor * len(original_dataset)))
+        resampled_dataset = self._vanilla_gan.sample(
+            n_samples=int(self._sample_multiplication_factor * len(original_dataset))
+        )
         resampled_dataset = pd.DataFrame(resampled_dataset)
 
         # drop excess samples
@@ -486,4 +534,297 @@ class UnlabeledVanillaGANTransformer(DummyTransformer):
         # join original and generated data into one dataframe
         original_and_resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
 
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            original_and_resampled_dataset.columns = original_column_titles
+
         return original_and_resampled_dataset
+
+
+class ProportionalConditionalGANTransformer(DummyTransformer):
+    """
+    Transformer that implements a proportional sampling routine using a
+    conditional GAN implementation. For each class, we sample a proportional
+    amount of samples using the condition vector.
+
+    Parameters
+    ----------
+
+    sample_multiplication_factor : float
+        Determines the relative amount of generated data, i.e. 0 means that no
+        data is generated and 1 means that we generate the same number of data
+        points as we already have.
+
+    batch_size: int, default=128
+        Number of samples used per training step.
+
+    learning_rate: float, default=1e-4
+        The learning rate for each training step.
+
+    betas: tuple, default=(0.5, 0.9)
+        Initial decay rates of Adam when estimating the first and second
+        moments of the gradient.
+
+    noise_dim: int, default=264
+        The length of the noise vector per example.
+
+    layers_dim: int, default=128
+        The dimension of the networks layers.
+
+    epochs: int, default=300
+        Total number of training steps.
+
+    sample_interval: int, default=50
+        The interval between samples.
+
+    References
+    ----------
+
+    .. [1] https://github.com/ydataai/ydata-synthetic/blob/dev/src/ydata_synthetic/synthesizers/regular/cgan/model.py
+
+    """
+
+    def __init__(
+            self,
+            sample_multiplication_factor,
+            batch_size=128,
+            learning_rate=1e-4,
+            betas=(0.5, 0.9),
+            noise_dim=264,
+            layers_dim=128,
+            epochs=300,
+            sample_interval=50
+    ):
+        self._sample_multiplication_factor = sample_multiplication_factor
+
+        self._model_parameters = ModelParameters(
+            batch_size=batch_size,
+            lr=learning_rate,
+            betas=betas,
+            noise_dim=noise_dim,
+            layers_dim=layers_dim
+        )
+
+        self._train_parameters = TrainParameters(
+            epochs=epochs,
+            sample_interval=sample_interval
+        )
+
+        self._cgan = CGAN(model_parameters=self._model_parameters, num_classes=1)
+
+    def fit(self, X, y=None):
+        # set the number of classes
+        unique, _ = np.unique(y, return_counts=True)
+        self._cgan.num_classes = len(unique)
+
+        # change the column titles for easier use
+        original_dataset = pd.DataFrame(X).copy()
+        original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
+        num_cols = original_dataset.columns.copy().tolist()
+
+        # add the target column to the dataset
+        target_column_title = len(original_dataset.columns)
+        original_dataset[target_column_title] = y
+
+        self._cgan.train(
+            data=original_dataset,
+            label_col=target_column_title,
+            train_arguments=self._train_parameters,
+            num_cols=num_cols,
+            cat_cols=[]
+        )
+
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Sample a proportional number of samples from the generated conditional GAN model.
+        """
+        # just return the original dataset if the sample multiplication factor is too small
+        if int(self._sample_multiplication_factor * len(X)) < 1:
+            return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy()
+
+        # calculate the number of occurrences per class
+        unique, counts = np.unique(y, return_counts=True)
+        occurrences_per_class_dict = dict(zip(unique, counts))
+
+        # resample the original dataset proportionally for each class
+        resampled_subsets_per_class = []
+        for class_name in occurrences_per_class_dict:
+            number_of_samples = int(self._sample_multiplication_factor * occurrences_per_class_dict[class_name])
+            condition = np.array([class_name])
+            resampled_subset = self._cgan.sample(
+                n_samples=number_of_samples,
+                condition=condition
+            )
+            resampled_subset = pd.DataFrame(resampled_subset)
+
+            # remove excess generated samples
+            resampled_subset = resampled_subset.iloc[:number_of_samples, :]
+
+            resampled_subsets_per_class.append(resampled_subset)
+
+        # join resampled subsets into one dataset
+        resampled_dataset = pd.concat(resampled_subsets_per_class, ignore_index=True)
+
+        # drop the target column from the generated dataset
+        resampled_dataset.columns = range(0, len(resampled_dataset.columns))
+        resampled_dataset = resampled_dataset.drop(columns=[len(resampled_dataset.columns) - 1])
+
+        # restore the original column titles
+        resampled_dataset.columns = original_dataset.columns
+
+        # join original and generated data into one dataframe
+        original_and_resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            original_and_resampled_dataset.columns = original_column_titles
+
+        return original_and_resampled_dataset
+
+
+class UnlabeledConditionalGANTransformer(DummyTransformer):
+    """
+    Transformer that implements an unlabeled sampling routine using a
+    conditional GAN implementation where we set the target vector to be all one
+    class.
+
+    Parameters
+    ----------
+
+    sample_multiplication_factor : float
+        Determines the relative amount of generated data, i.e. 0 means that no
+        data is generated and 1 means that we generate the same number of data
+        points as we already have.
+
+    batch_size: int, default=128
+        Number of samples used per training step.
+
+    learning_rate: float, default=1e-4
+        The learning rate for each training step.
+
+    betas: tuple, default=(0.5, 0.9)
+        Initial decay rates of Adam when estimating the first and second
+        moments of the gradient.
+
+    noise_dim: int, default=264
+        The length of the noise vector per example.
+
+    layers_dim: int, default=128
+        The dimension of the networks layers.
+
+    epochs: int, default=300
+        Total number of training steps.
+
+    sample_interval: int, default=50
+        The interval between samples.
+
+    References
+    ----------
+
+    .. [1] https://github.com/ydataai/ydata-synthetic/blob/dev/src/ydata_synthetic/synthesizers/regular/vanillagan/model.py
+
+    """
+
+    def __init__(
+            self,
+            sample_multiplication_factor,
+            batch_size=128,
+            learning_rate=1e-4,
+            betas=(0.5, 0.9),
+            noise_dim=264,
+            layers_dim=128,
+            epochs=300,
+            sample_interval=50
+    ):
+        self._sample_multiplication_factor = sample_multiplication_factor
+
+        self._model_parameters = ModelParameters(
+            batch_size=batch_size,
+            lr=learning_rate,
+            betas=betas,
+            noise_dim=noise_dim,
+            layers_dim=layers_dim
+        )
+
+        self._train_parameters = TrainParameters(
+            epochs=epochs,
+            sample_interval=sample_interval
+        )
+
+        self._cgan = CGAN(model_parameters=self._model_parameters, num_classes=1)
+
+    def fit(self, X, y=None):
+        # change the column titles for easier use
+        original_dataset = pd.DataFrame(X).copy()
+        original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
+        num_cols = original_dataset.columns.copy().tolist()
+
+        # add the target column to the dataset
+        target_column_title = len(original_dataset.columns)
+        original_dataset[target_column_title] = np.full((len(X),), 0).T
+
+        self._cgan.train(
+            data=original_dataset,
+            label_col=target_column_title,
+            train_arguments=self._train_parameters,
+            num_cols=num_cols,
+            cat_cols=[]
+        )
+
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Sample a proportional number of samples from the generated conditional GAN model.
+        """
+        # just return the original dataset if the sample multiplication factor is too small
+        if int(self._sample_multiplication_factor * len(X)) < 1:
+            return X
+
+        # store column titles to restore them after sampling if available
+        if hasattr(X, 'columns'):
+            original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy()
+
+        number_of_samples = int(self._sample_multiplication_factor * len(X))
+        condition = np.array([0])
+        resampled_dataset = self._cgan.sample(
+            n_samples=number_of_samples,
+            condition=condition
+        )
+        resampled_dataset = pd.DataFrame(resampled_dataset)
+
+        # remove excess generated samples
+        resampled_dataset = resampled_dataset.iloc[:number_of_samples, :]
+
+        # drop the target column from the generated dataset
+        resampled_dataset.columns = range(0, len(resampled_dataset.columns))
+        resampled_dataset = resampled_dataset.drop(columns=[len(resampled_dataset.columns) - 1])
+
+        # restore the original column titles
+        resampled_dataset.columns = original_dataset.columns
+
+        # join original and generated data into one dataframe
+        original_and_resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+
+        # restore column titles if available
+        if hasattr(X, 'columns'):
+            original_and_resampled_dataset.columns = original_column_titles
+
+        return original_and_resampled_dataset
+
+
+def _convert_list_to_string_list(item_list):
+    string_list = []
+    for item in item_list:
+        string_list.append(str(item))
+    return string_list
