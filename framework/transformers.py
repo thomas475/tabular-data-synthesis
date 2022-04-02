@@ -1,5 +1,5 @@
-"""Transformer wrappers for SMOTE, GAN and Gibbs sampling for use as samplers
-   in sklearn.pipeline.Pipeline"""
+"""Transformer wrappers for SMOTE, GAN and Gibbs sampling methods for use as
+   samplers in sklearn.pipeline.Pipeline"""
 
 # Authors: Thomas Frank <thomas-frank01@gmx.de>
 # License: MIT
@@ -17,13 +17,12 @@ from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
 from framework.racog import RACOG
 
 import warnings
-from typing import Union
 
 
 class DummyTransformer(BaseEstimator, TransformerMixin):
     """
     Dummy class that allows us to modify only the methods that interest us,
-    avoiding redudancy.
+    avoiding redundancy.
     """
 
     def __init__(self):
@@ -405,7 +404,7 @@ class UnlabeledRACOGTransformer(DummyTransformer):
 
         original_dataset = pd.DataFrame(X).copy()
 
-        # adding target column that only consits of one class
+        # adding target column that only consists of one class
         target_column_title = str(len(original_dataset.columns))
         original_dataset[target_column_title] = np.full((len(X), 1), 1)
 
