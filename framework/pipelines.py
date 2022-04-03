@@ -152,3 +152,6 @@ class TeacherTrainingPipeline:
 
     def fit(self, X, y):
         return self._pipeline.fit(X, y)
+
+    def get_pipeline(self):
+        return self._pipeline

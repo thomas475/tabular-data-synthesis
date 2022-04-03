@@ -89,7 +89,7 @@ teacher_training_pipeline = TeacherTrainingPipeline(
 )
 
 opt = BayesSearchCV(
-    teacher_training_pipeline,
+    teacher_training_pipeline.get_pipeline(),
     {
         'teacher__n_estimators': (5,5000),
         'teacher__max_features': ['auto','sqrt'],
@@ -100,7 +100,8 @@ opt = BayesSearchCV(
     },
     n_iter=25,
     cv=5,
-    scoring='roc_auc'
+    scoring='roc_auc',
+    verbose=5
 )
 opt.fit(X_train, y_train)
 
