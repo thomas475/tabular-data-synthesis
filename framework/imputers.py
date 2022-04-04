@@ -17,11 +17,11 @@ class DropImputer(TransformerMixin):
     def fit(self, X: pd.DataFrame, y=None, **fit_params):
         return self
 
-    def transform(self, X: pd.DataFrame, y=None, **fit_params):
+    def transform(self, X, y=None, **fit_params):
         if y is None:
-            return X.copy().dropna().reset_index(drop=True)
+            return pd.DataFrame(X).copy().dropna().reset_index(drop=True)
         else:
-            X = X.copy()
+            X = pd.DataFrame(X).copy()
             original_column_names = X.columns
 
             # change column names for better usability

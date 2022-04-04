@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
 
-class Labeler(BaseEstimator, TransformerMixin):
+class Labeler(TransformerMixin):
     """
     Transformer that labels the dataset by using the submitted already trained
     teacher model.
@@ -23,7 +23,7 @@ class Labeler(BaseEstimator, TransformerMixin):
         return X, self._trained_model.predict(X)
 
 
-class TargetInjector(BaseEstimator, TransformerMixin):
+class TargetInjector(TransformerMixin):
     """
     Append the target column to the dataset.
     """
@@ -44,7 +44,7 @@ class TargetInjector(BaseEstimator, TransformerMixin):
             return self.fit(X, y, **fit_params).transform(X, y)
 
 
-class TargetExtractor(BaseEstimator, TransformerMixin):
+class TargetExtractor(TransformerMixin):
     """
     Extract the target column from the end of the dataset.
     """
@@ -72,7 +72,7 @@ class TargetExtractor(BaseEstimator, TransformerMixin):
         return X, y
 
 
-class DatasetCombiner(BaseEstimator, TransformerMixin):
+class DatasetCombiner(TransformerMixin):
     """
     Transformer that combines the submitted dataset with the current dataset in
     the pipeline.

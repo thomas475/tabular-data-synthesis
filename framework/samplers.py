@@ -87,10 +87,10 @@ class ProportionalSMOTESampler(Sampler):
             k_neighbors=5,
             n_jobs=None
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-        self._random_state = random_state
-        self._k_neighbors = k_neighbors
-        self._n_jobs = n_jobs
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.random_state = random_state
+        self.k_neighbors = k_neighbors
+        self.n_jobs = n_jobs
 
     def fit(self, X, y):
         return self
@@ -101,12 +101,15 @@ class ProportionalSMOTESampler(Sampler):
         Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+        y = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
         unique, counts = np.unique(y, return_counts=True)
@@ -116,31 +119,31 @@ class ProportionalSMOTESampler(Sampler):
         sampling_strategy = {}
         for class_name in occurrences_per_class_dict:
             sampling_strategy[class_name] = int(
-                (self._sample_multiplication_factor + 1) * occurrences_per_class_dict[class_name]
+                (self.sample_multiplication_factor + 1) * occurrences_per_class_dict[class_name]
             )
 
         smote = SMOTE(
             sampling_strategy=sampling_strategy,
-            random_state=self._random_state,
-            k_neighbors=self._k_neighbors,
-            n_jobs=self._n_jobs
+            random_state=self.random_state,
+            k_neighbors=self.k_neighbors,
+            n_jobs=self.n_jobs
         )
 
         # filter user warning that fires because we do not use SMOTE simply for balancing the dataset
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            X_resampled, y_resampled = smote.fit_resample(X, y)
-        X_resampled = pd.DataFrame(X_resampled)
+            resampled_dataset, y_resampled = smote.fit_resample(original_dataset, y)
+        resampled_dataset = pd.DataFrame(resampled_dataset)
 
         # remove original dataset
-        X_resampled = pd.DataFrame(X_resampled.iloc[len(X):, :])
-        X_resampled = X_resampled.reset_index(drop=True)
+        resampled_dataset = pd.DataFrame(resampled_dataset.iloc[len(X):, :])
+        resampled_dataset = resampled_dataset.reset_index(drop=True)
 
         # restore column titles if available
         if hasattr(X, 'columns'):
-            X_resampled.columns = original_column_titles
+            resampled_dataset.columns = original_column_titles
 
-        return X_resampled
+        return resampled_dataset, None
 
 
 class UnlabeledSMOTESampler(Sampler):
@@ -188,10 +191,10 @@ class UnlabeledSMOTESampler(Sampler):
             k_neighbors=5,
             n_jobs=None
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-        self._random_state = random_state
-        self._k_neighbors = k_neighbors
-        self._n_jobs = n_jobs
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.random_state = random_state
+        self.k_neighbors = k_neighbors
+        self.n_jobs = n_jobs
 
     def fit(self, X, y=None):
         return self
@@ -205,53 +208,55 @@ class UnlabeledSMOTESampler(Sampler):
         generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+
         # create a dummy target vector [ 0 1 ... 1 ]
-        y_dummy = np.append(0, np.full((len(X), 1), 1))
+        y_dummy = np.append(0, np.full((len(original_dataset), 1), 1))
 
         # set sampling strategy to ignore the dummy class and resample the rest
         sampling_strategy = {
             0: 1,
-            1: int((self._sample_multiplication_factor + 1) * len(X))
+            1: int((self.sample_multiplication_factor + 1) * len(original_dataset))
         }
 
         # insert a dummy entry on index 0
-        X_dummy = pd.DataFrame(X).copy()
-        X_dummy.loc[-1] = [0] * len(X_dummy.columns)
-        X_dummy.index = X_dummy.index + 1
-        X_dummy.sort_index(inplace=True)
+        dummy_dataset = pd.DataFrame(original_dataset).copy()
+        dummy_dataset.loc[-1] = [0] * len(dummy_dataset.columns)
+        dummy_dataset.index = dummy_dataset.index + 1
+        dummy_dataset.sort_index(inplace=True)
 
         smote = SMOTE(
             sampling_strategy=sampling_strategy,
-            random_state=self._random_state,
-            k_neighbors=self._k_neighbors,
-            n_jobs=self._n_jobs
+            random_state=self.random_state,
+            k_neighbors=self.k_neighbors,
+            n_jobs=self.n_jobs
         )
 
         # filter user warning that fires because we do not use SMOTE simply for balancing the dataset
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            X_dummy_resampled, y_dummy_resampled = smote.fit_resample(X_dummy, y_dummy)
-        X_dummy_resampled = pd.DataFrame(X_dummy_resampled)
+            resampled_dummy_dataset, resampled_y_dummy = smote.fit_resample(dummy_dataset, y_dummy)
+        resampled_dummy_dataset = pd.DataFrame(resampled_dummy_dataset)
 
         # remove the dummy entry
-        X_resampled = X_dummy_resampled.iloc[1:, :].reset_index(drop=True)
+        resampled_dataset = resampled_dummy_dataset.iloc[1:, :].reset_index(drop=True)
 
         # remove original dataset
-        X_resampled = pd.DataFrame(X_resampled.iloc[len(X):, :])
-        X_resampled = X_resampled.reset_index(drop=True)
+        resampled_dataset = pd.DataFrame(resampled_dataset.iloc[len(X):, :])
+        resampled_dataset = resampled_dataset.reset_index(drop=True)
 
         # restore column titles if available
         if hasattr(X, 'columns'):
-            X_dummy_resampled.columns = original_column_titles
+            resampled_dataset.columns = original_column_titles
 
-        return X_resampled
+        return resampled_dataset, None
 
 
 class ProportionalRACOGSampler(Sampler):
@@ -294,8 +299,9 @@ class ProportionalRACOGSampler(Sampler):
             burnin=100,
             lag=20
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-        self._racog = RACOG(burnin, lag)
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.burnin = burnin
+        self.lag = lag
 
     def fit(self, X, y):
         return self
@@ -306,14 +312,15 @@ class ProportionalRACOGSampler(Sampler):
         Afterwards join the resampled subsets. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+        y = pd.Series(y).copy().reset_index(drop=True)
 
         # adding target column
         target_column_title = str(len(original_dataset.columns))
@@ -327,9 +334,9 @@ class ProportionalRACOGSampler(Sampler):
         # resample each subset independently
         resampled_subset_per_class = []
         for original_subset in original_subset_per_class:
-            resampled_subset = self._racog.resample(
+            resampled_subset = RACOG(burnin=self.burnin, lag=self.lag).resample(
                 dataset=original_subset,
-                num_instances=int(self._sample_multiplication_factor * len(original_subset)),
+                num_instances=int(self.sample_multiplication_factor * len(original_subset)),
                 class_attr=target_column_title
             )
             resampled_subset_per_class.append(resampled_subset)
@@ -342,7 +349,7 @@ class ProportionalRACOGSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class UnlabeledRACOGSampler(Sampler):
@@ -385,8 +392,9 @@ class UnlabeledRACOGSampler(Sampler):
             burnin=100,
             lag=20
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-        self._racog = RACOG(burnin, lag)
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.burnin = burnin
+        self.lag = lag
 
     def fit(self, X, y=None):
         return self
@@ -399,22 +407,22 @@ class UnlabeledRACOGSampler(Sampler):
         to the same class. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
 
         # adding target column that only consists of one class
         target_column_title = str(len(original_dataset.columns))
         original_dataset[target_column_title] = np.full((len(X), 1), 1)
 
-        resampled_dataset = self._racog.resample(
+        resampled_dataset = RACOG(burnin=self.burnin, lag=self.lag).resample(
             dataset=original_dataset,
-            num_instances=int(self._sample_multiplication_factor * len(original_dataset)),
+            num_instances=int(self.sample_multiplication_factor * len(original_dataset)),
             class_attr=target_column_title
         )
 
@@ -426,7 +434,7 @@ class UnlabeledRACOGSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class ProportionalVanillaGANSampler(Sampler):
@@ -483,29 +491,22 @@ class ProportionalVanillaGANSampler(Sampler):
             epochs=300,
             sample_interval=50
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-
-        self._model_parameters = ModelParameters(
-            batch_size=batch_size,
-            lr=learning_rate,
-            betas=betas,
-            noise_dim=noise_dim,
-            layers_dim=layers_dim
-        )
-
-        self._train_parameters = TrainParameters(
-            epochs=epochs,
-            sample_interval=sample_interval
-        )
-
-        self._vanilla_gan = {}
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.betas = betas
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+        self.epochs = epochs
+        self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
         # reset dragan models
         self._vanilla_gan = {}
 
         # change the column titles for easier use
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+        y = pd.Series(y).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
         num_cols = original_dataset.columns.copy().tolist()
 
@@ -514,13 +515,24 @@ class ProportionalVanillaGANSampler(Sampler):
         occurrences_per_class_dict = dict(zip(unique, counts))
 
         for class_name in occurrences_per_class_dict:
-            self._vanilla_gan[class_name] = VanilllaGAN(model_parameters=self._model_parameters)
+            self._vanilla_gan[class_name] = VanilllaGAN(
+                model_parameters=ModelParameters(
+                    batch_size=self.batch_size,
+                    lr=self.learning_rate,
+                    betas=self.betas,
+                    noise_dim=self.noise_dim,
+                    layers_dim=self.layers_dim
+                )
+            )
 
             original_subset = original_dataset.iloc[[x for x in range(0, len(y)) if y[x] == class_name]]
 
             self._vanilla_gan[class_name].train(
                 data=original_subset,
-                train_arguments=self._train_parameters,
+                train_arguments=TrainParameters(
+                    epochs=self.epochs,
+                    sample_interval=self.sample_interval
+                ),
                 num_cols=num_cols,
                 cat_cols=[]
             )
@@ -533,14 +545,14 @@ class ProportionalVanillaGANSampler(Sampler):
         split by class. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
+        y = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
         unique, counts = np.unique(y, return_counts=True)
@@ -548,7 +560,7 @@ class ProportionalVanillaGANSampler(Sampler):
 
         resampled_subsets_per_class = []
         for class_name in occurrences_per_class_dict:
-            number_of_samples = int(self._sample_multiplication_factor * occurrences_per_class_dict[class_name])
+            number_of_samples = int(self.sample_multiplication_factor * occurrences_per_class_dict[class_name])
             resampled_subset = self._vanilla_gan[class_name].sample(
                 n_samples=number_of_samples,
             )
@@ -567,7 +579,7 @@ class ProportionalVanillaGANSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class UnlabeledVanillaGANSampler(Sampler):
@@ -623,30 +635,35 @@ class UnlabeledVanillaGANSampler(Sampler):
             epochs=300,
             sample_interval=50
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-
-        self._model_parameters = ModelParameters(
-            batch_size=batch_size,
-            lr=learning_rate,
-            betas=betas,
-            noise_dim=noise_dim,
-            layers_dim=layers_dim
-        )
-
-        self._train_parameters = TrainParameters(
-            epochs=epochs,
-            sample_interval=sample_interval
-        )
-
-        self._vanilla_gan = VanilllaGAN(model_parameters=self._model_parameters)
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.betas = betas
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+        self.epochs = epochs
+        self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
-        original_dataset = pd.DataFrame(X)
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(original_dataset.columns)
+
+        self._vanilla_gan = VanilllaGAN(
+            model_parameters=ModelParameters(
+                batch_size=self.batch_size,
+                lr=self.learning_rate,
+                betas=self.betas,
+                noise_dim=self.noise_dim,
+                layers_dim=self.layers_dim
+            )
+        )
 
         self._vanilla_gan.train(
             data=original_dataset,
-            train_arguments=self._train_parameters,
+            train_arguments=TrainParameters(
+                epochs=self.epochs,
+                sample_interval=self.sample_interval
+            ),
             num_cols=original_dataset.columns.tolist(),
             cat_cols=[]
         )
@@ -658,24 +675,24 @@ class UnlabeledVanillaGANSampler(Sampler):
         Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
 
         # resample the original dataset
         resampled_dataset = self._vanilla_gan.sample(
-            n_samples=int(self._sample_multiplication_factor * len(original_dataset))
+            n_samples=int(self.sample_multiplication_factor * len(original_dataset))
         )
         resampled_dataset = pd.DataFrame(resampled_dataset)
 
         # drop excess samples
         resampled_dataset = resampled_dataset.head(
-            int(self._sample_multiplication_factor * len(original_dataset))
+            int(self.sample_multiplication_factor * len(original_dataset))
         )
         resampled_dataset = resampled_dataset.reset_index(drop=True)
 
@@ -683,7 +700,7 @@ class UnlabeledVanillaGANSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class ProportionalConditionalGANSampler(Sampler):
@@ -738,32 +755,34 @@ class ProportionalConditionalGANSampler(Sampler):
             noise_dim=264,
             layers_dim=128,
             epochs=300,
-            sample_interval=50
+            sample_interval=50,
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-
-        self._model_parameters = ModelParameters(
-            batch_size=batch_size,
-            lr=learning_rate,
-            betas=betas,
-            noise_dim=noise_dim,
-            layers_dim=layers_dim
-        )
-
-        self._train_parameters = TrainParameters(
-            epochs=epochs,
-            sample_interval=sample_interval
-        )
-
-        self._cgan = CGAN(model_parameters=self._model_parameters, num_classes=1)
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.betas = betas
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+        self.epochs = epochs
+        self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
         # set the number of classes
         unique, _ = np.unique(y, return_counts=True)
-        self._cgan.num_classes = len(unique)
+        self._cgan = CGAN(
+            model_parameters=ModelParameters(
+                batch_size=self.batch_size,
+                lr=self.learning_rate,
+                betas=self.betas,
+                noise_dim=self.noise_dim,
+                layers_dim=self.layers_dim
+            ),
+            num_classes=len(unique)
+        )
 
         # change the column titles for easier use
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+        y = pd.Series(y).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
         num_cols = original_dataset.columns.copy().tolist()
 
@@ -774,7 +793,10 @@ class ProportionalConditionalGANSampler(Sampler):
         self._cgan.train(
             data=original_dataset,
             label_col=target_column_title,
-            train_arguments=self._train_parameters,
+            train_arguments=TrainParameters(
+                epochs=self.epochs,
+                sample_interval=self.sample_interval
+            ),
             num_cols=num_cols,
             cat_cols=[]
         )
@@ -787,14 +809,14 @@ class ProportionalConditionalGANSampler(Sampler):
         GAN model. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
+        y = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
         unique, counts = np.unique(y, return_counts=True)
@@ -803,7 +825,7 @@ class ProportionalConditionalGANSampler(Sampler):
         # resample the original dataset proportionally for each class
         resampled_subsets_per_class = []
         for class_name in occurrences_per_class_dict:
-            number_of_samples = int(self._sample_multiplication_factor * occurrences_per_class_dict[class_name])
+            number_of_samples = int(self.sample_multiplication_factor * occurrences_per_class_dict[class_name])
             condition = np.array([class_name])
             resampled_subset = self._cgan.sample(
                 n_samples=number_of_samples,
@@ -828,7 +850,7 @@ class ProportionalConditionalGANSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class UnlabeledConditionalGANSampler(Sampler):
@@ -885,26 +907,18 @@ class UnlabeledConditionalGANSampler(Sampler):
             epochs=300,
             sample_interval=50
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-
-        self._model_parameters = ModelParameters(
-            batch_size=batch_size,
-            lr=learning_rate,
-            betas=betas,
-            noise_dim=noise_dim,
-            layers_dim=layers_dim
-        )
-
-        self._train_parameters = TrainParameters(
-            epochs=epochs,
-            sample_interval=sample_interval
-        )
-
-        self._cgan = CGAN(model_parameters=self._model_parameters, num_classes=1)
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.betas = betas
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+        self.epochs = epochs
+        self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
         # change the column titles for easier use
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
         num_cols = original_dataset.columns.copy().tolist()
 
@@ -912,10 +926,24 @@ class UnlabeledConditionalGANSampler(Sampler):
         target_column_title = len(original_dataset.columns)
         original_dataset[target_column_title] = np.full((len(X),), 0).T
 
+        self._cgan = CGAN(
+            model_parameters=ModelParameters(
+                batch_size=self.batch_size,
+                lr=self.learning_rate,
+                betas=self.betas,
+                noise_dim=self.noise_dim,
+                layers_dim=self.layers_dim
+            ),
+            num_classes=1
+        )
+
         self._cgan.train(
             data=original_dataset,
             label_col=target_column_title,
-            train_arguments=self._train_parameters,
+            train_arguments=TrainParameters(
+                epochs=self.epochs,
+                sample_interval=self.sample_interval
+            ),
             num_cols=num_cols,
             cat_cols=[]
         )
@@ -928,16 +956,14 @@ class UnlabeledConditionalGANSampler(Sampler):
         GAN model. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
-
-        number_of_samples = int(self._sample_multiplication_factor * len(X))
+        number_of_samples = int(self.sample_multiplication_factor * len(X))
         condition = np.array([0])
         resampled_dataset = self._cgan.sample(
             n_samples=number_of_samples,
@@ -957,7 +983,7 @@ class UnlabeledConditionalGANSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class ProportionalDRAGANSampler(Sampler):
@@ -1019,30 +1045,23 @@ class ProportionalDRAGANSampler(Sampler):
             epochs=300,
             sample_interval=50
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-        self._discriminator_updates_per_step = discriminator_updates_per_step
-
-        self._model_parameters = ModelParameters(
-            batch_size=batch_size,
-            lr=learning_rate,
-            betas=betas,
-            noise_dim=noise_dim,
-            layers_dim=layers_dim
-        )
-
-        self._train_parameters = TrainParameters(
-            epochs=epochs,
-            sample_interval=sample_interval
-        )
-
-        self._dragan = {}
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.discriminator_updates_per_step = discriminator_updates_per_step
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.betas = betas
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+        self.epochs = epochs
+        self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
         # reset dragan models
         self._dragan = {}
 
         # change the column titles for easier use
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+        y = pd.Series(y).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
         num_cols = original_dataset.columns.copy().tolist()
 
@@ -1052,15 +1071,24 @@ class ProportionalDRAGANSampler(Sampler):
 
         for class_name in occurrences_per_class_dict:
             self._dragan[class_name] = DRAGAN(
-                model_parameters=self._model_parameters,
-                n_discriminator=self._discriminator_updates_per_step
+                model_parameters=ModelParameters(
+                    batch_size=self.batch_size,
+                    lr=self.learning_rate,
+                    betas=self.betas,
+                    noise_dim=self.noise_dim,
+                    layers_dim=self.layers_dim
+                ),
+                n_discriminator=self.discriminator_updates_per_step
             )
 
             original_subset = original_dataset.iloc[[x for x in range(0, len(y)) if y[x] == class_name]]
 
             self._dragan[class_name].train(
                 data=original_subset,
-                train_arguments=self._train_parameters,
+                train_arguments=TrainParameters(
+                    epochs=self.epochs,
+                    sample_interval=self.sample_interval
+                ),
                 num_cols=num_cols,
                 cat_cols=[]
             )
@@ -1073,14 +1101,14 @@ class ProportionalDRAGANSampler(Sampler):
         split by class. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
+        y = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
         unique, counts = np.unique(y, return_counts=True)
@@ -1088,7 +1116,7 @@ class ProportionalDRAGANSampler(Sampler):
 
         resampled_subsets_per_class = []
         for class_name in occurrences_per_class_dict:
-            number_of_samples = int(self._sample_multiplication_factor * occurrences_per_class_dict[class_name])
+            number_of_samples = int(self.sample_multiplication_factor * occurrences_per_class_dict[class_name])
             resampled_subset = self._dragan[class_name].sample(
                 n_samples=number_of_samples,
             )
@@ -1107,7 +1135,7 @@ class ProportionalDRAGANSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 class UnlabeledDRAGANSampler(Sampler):
@@ -1168,32 +1196,39 @@ class UnlabeledDRAGANSampler(Sampler):
             epochs=300,
             sample_interval=50
     ):
-        self._sample_multiplication_factor = sample_multiplication_factor
-
-        self._model_parameters = ModelParameters(
-            batch_size=batch_size,
-            lr=learning_rate,
-            betas=betas,
-            noise_dim=noise_dim,
-            layers_dim=layers_dim
-        )
-
-        self._train_parameters = TrainParameters(
-            epochs=epochs,
-            sample_interval=sample_interval
-        )
-
-        self._dragan = DRAGAN(model_parameters=self._model_parameters, n_discriminator=discriminator_updates_per_step)
+        self.sample_multiplication_factor = sample_multiplication_factor
+        self.discriminator_updates_per_step = discriminator_updates_per_step
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.betas = betas
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+        self.epochs = epochs
+        self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
         # change the column titles for easier use
-        original_dataset = pd.DataFrame(X).copy()
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
         num_cols = original_dataset.columns.copy().tolist()
 
+        self._dragan = DRAGAN(
+            model_parameters=ModelParameters(
+                batch_size=self.batch_size,
+                lr=self.learning_rate,
+                betas=self.betas,
+                noise_dim=self.noise_dim,
+                layers_dim=self.layers_dim
+            ),
+            n_discriminator=self.discriminator_updates_per_step
+        )
+
         self._dragan.train(
             data=original_dataset,
-            train_arguments=self._train_parameters,
+            train_arguments=TrainParameters(
+                epochs=self.epochs,
+                sample_interval=self.sample_interval
+            ),
             num_cols=num_cols,
             cat_cols=[]
         )
@@ -1206,16 +1241,14 @@ class UnlabeledDRAGANSampler(Sampler):
         only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
-        if int(self._sample_multiplication_factor * len(X)) < 1:
+        if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=X.columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
 
-        original_dataset = pd.DataFrame(X).copy()
-
-        number_of_samples = int(self._sample_multiplication_factor * len(X))
+        number_of_samples = int(self.sample_multiplication_factor * len(X))
         resampled_dataset = self._dragan.sample(n_samples=number_of_samples)
         resampled_dataset = pd.DataFrame(resampled_dataset)
 
@@ -1227,7 +1260,7 @@ class UnlabeledDRAGANSampler(Sampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset
+        return resampled_dataset, None
 
 
 def _convert_list_to_string_list(item_list):

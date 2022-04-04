@@ -1,3 +1,5 @@
+import pandas as pd
+
 from framework.pipelines import *
 
 from sklearn.impute import SimpleImputer
@@ -11,6 +13,30 @@ from framework.imputers import DropImputer
 import framework.encoders as enc
 from framework.transformers import DatasetCombiner, Labeler
 from framework.samplers import *
+
+from skopt.space import Real, Categorical, Integer
+
+search_spaces = {
+    'decision_tree_classifier': {
+        "student__max_depth": Integer(0, 6),
+        "student__max_features": Integer(1, 9),
+        "student__min_samples_leaf": Integer(1, 9),
+        "student__criterion": Categorical(["gini", "entropy"])
+    },
+    'smote': {
+        'sampler__k_neighbors': Integer(1, 7)
+    },
+    'racog': {
+        'sampler__burnin': Integer(50, 250),
+        'sampler__lag': Integer(1, 5)
+    },
+    'gan': {
+        'sampler__batch_size': Integer(32, 256),
+        'sampler__learning_rate': Real(0.0001, 0.1),
+        'sampler__noise_dim': Integer(64, 512),
+        'sampler__layers_dim': Integer(32, 256)
+    }
+}
 
 imputers = [
     SimpleImputer(strategy='most_frequent'),
@@ -78,16 +104,75 @@ y = adult['income'].map({'<=50K': 0, '>50K': 1})
 
 from sklearn.model_selection import train_test_split
 
+imputer = SimpleImputer(strategy='most_frequent')
+encoder = ce.TargetEncoder()
+scaler = RobustScaler()
+sampler = ProportionalRACOGSampler
+labeler = Labeler
+combiner = DatasetCombiner
+student = DecisionTreeClassifier
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
 
-teacher_pipeline = RandomForestClassifierTeacherPipeline(
-    imputer=SimpleImputer(strategy='most_frequent'),
-    encoder=ce.TargetEncoder(),
-    scaler=RobustScaler()
+preprocessor = PreprocessorPipeline(
+    imputer=imputer,
+    encoder=encoder,
+    scaler=scaler,
 )
-teacher_pipeline.fit(X_train, y_train)
 
-print("test score: %s" % teacher_pipeline.score(X_test, y_test))
+X_train_preprocessed, y_train_preprocessed = preprocessor.fit_transform(X_train, y_train)
+X_test_preprocessed, y_test_preprocessed = preprocessor.fit_transform(X_test, y_test)
+
+teacher = RandomForestClassifierTeacherPipeline(
+    imputer=imputer,
+    encoder=encoder,
+    scaler=scaler,
+    n_iter=1,
+    cv=2
+)
+teacher.fit(X_train, y_train)
+print('teacher auc:', teacher.score(X_test, y_test))
+
+from framework.pipelines import CustomPipeline
+
+baseline_student = BaselineStudentPipeline(
+    imputer=imputer,
+    encoder=encoder,
+    scaler=scaler,
+    student=student(),
+    search_spaces={
+        **search_spaces['decision_tree_classifier']
+    },
+    n_iter=1,
+    cv=2,
+    scoring='roc_auc',
+    n_jobs=1,
+    random_state=42
+)
+baseline_student.fit(X_train, y_train)
+print("baseline student auc:", baseline_student.score(X_test, y_test))
+
+student = TeacherLabeledAugmentedStudentPipeline(
+    imputer=imputer,
+    encoder=encoder,
+    scaler=scaler,
+    sampler=sampler(sample_multiplication_factor=4),
+    teacher=labeler(trained_model=teacher),
+    combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
+    student=student(),
+    search_spaces={
+        **search_spaces['decision_tree_classifier'],
+        **search_spaces['racog']
+    },
+    n_iter=1,
+    cv=2,
+    scoring='roc_auc',
+    n_jobs=1,
+    random_state=42
+)
+student.fit(X_train, y_train)
+student.predict(X_test)
+print("student auc:", student.score(X_test, y_test))
 
 # random_forest_classifier = RandomForestClassifier()
 # random_forest_classifier.fit(X, y)

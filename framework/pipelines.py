@@ -1,14 +1,16 @@
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.pipeline import _fit_transform_one
+from sklearn.pipeline import _final_estimator_has, _fit_transform_one
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
+from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from sklearn.ensemble import RandomForestClassifier
 
 from skopt import BayesSearchCV
 
+from inspect import signature
 
 class CustomPipeline(Pipeline):
     """
@@ -61,48 +63,25 @@ class CustomPipeline(Pipeline):
                 **fit_params_steps[name],
             )
 
-            # NEW CODE - unpack X if it is tuple X = (X, y)
+            # NEW CODE
             if isinstance(X, tuple):
                 X, y = X
+
+            print(name)
+            print(pd.concat([pd.DataFrame(X).reset_index(drop=True), pd.Series(y).reset_index(drop=True)], axis=1))
 
             # Replace the transformer of the step with the fitted
             # transformer. This is necessary when loading the transformer
             # from the cache.
             self.steps[step_idx] = (name, fitted_transformer)
-        return X
+
+        # NEW CODE
+        return X, y
 
     def fit(self, X, y=None, **fit_params):
-        """Fit the model.
-
-        Fit all the transformers one after the other and transform the
-        data. Finally, fit the transformed data using the final estimator.
-
-        Parameters
-        ----------
-        X : iterable
-            Training data. Must fulfill input requirements of first step of the
-            pipeline.
-
-        y : iterable, default=None
-            Training targets. Must fulfill label requirements for all steps of
-            the pipeline.
-
-        **fit_params : dict of string -> object
-            Parameters passed to the ``fit`` method of each step, where
-            each parameter name is prefixed such that parameter ``p`` for step
-            ``s`` has key ``s__p``.
-
-        Returns
-        -------
-        self : object
-            Pipeline with fitted steps.
-        """
         fit_params_steps = self._check_fit_params(**fit_params)
-        Xt = self._fit(X, y, **fit_params_steps)
-
-        # NEW CODE - unpack X if it is tuple X = (X, y)
-        if isinstance(X, tuple):
-            X, y = X
+        # NEW CODE
+        Xt, y = self._fit(X, y, **fit_params_steps)
 
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator != "passthrough":
@@ -110,6 +89,117 @@ class CustomPipeline(Pipeline):
                 self._final_estimator.fit(Xt, y, **fit_params_last_step)
 
         return self
+
+    def _can_transform(self):
+        return self._final_estimator == "passthrough" or hasattr(
+            self._final_estimator, "transform"
+        )
+
+    @available_if(_can_transform)
+    def transform(self, X, y=None):
+        Xt = X
+        for _, _, transform in self._iter():
+            # NEW CODE
+            y_param = False
+            for param in signature(transform.transform).parameters.values():
+                if param.name == 'y':
+                    y_param = True
+
+            if y_param:
+                Xt = transform.transform(Xt, y)
+            else:
+                Xt = transform.transform(Xt)
+
+            if isinstance(Xt, tuple):
+                Xt, y = Xt
+
+        # NEW CODE
+        return Xt, y
+
+    def fit_transform(self, X, y=None, **fit_params):
+        fit_params_steps = self._check_fit_params(**fit_params)
+        # NEW CODE
+        Xt, y = self._fit(X, y, **fit_params_steps)
+
+        last_step = self._final_estimator
+        with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
+            if last_step == "passthrough":
+                return Xt, y
+            fit_params_last_step = fit_params_steps[self.steps[-1][0]]
+
+            # NEW CODE
+            if hasattr(last_step, "fit_transform"):
+                Xt = last_step.fit_transform(Xt, y, **fit_params_last_step)
+            else:
+                y_param = False
+                for param in signature(last_step.transform).parameters.values():
+                    if param.name == 'y':
+                        y_param = True
+
+                if y_param:
+                    Xt = last_step.fit(Xt, y, **fit_params_last_step).transform(Xt, y)
+                else:
+                    Xt = last_step.fit(Xt, y, **fit_params_last_step).transform(Xt)
+
+            if isinstance(Xt, tuple):
+                Xt, y = Xt
+
+            # NEW CODE
+            return Xt, y
+
+    @available_if(_final_estimator_has("fit_predict"))
+    def fit_predict(self, X, y=None, **fit_params):
+        fit_params_steps = self._check_fit_params(**fit_params)
+        # NEW CODE
+        Xt, _ = self._fit(X, y, **fit_params_steps)
+
+        fit_params_last_step = fit_params_steps[self.steps[-1][0]]
+        with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
+            y_pred = self.steps[-1][1].fit_predict(Xt, y, **fit_params_last_step)
+        return y_pred
+
+    @available_if(_final_estimator_has("predict_proba"))
+    def predict_proba(self, X, **predict_proba_params):
+        Xt = X
+        y = None
+        for _, name, transform in self._iter(with_final=False):
+            # NEW CODE
+            y_param = False
+            for param in signature(transform.transform).parameters.values():
+                if param.name == 'y':
+                    y_param = True
+
+            if y_param:
+                Xt = transform.transform(Xt, y)
+            else:
+                Xt = transform.transform(Xt)
+
+            if isinstance(Xt, tuple):
+                Xt, y = Xt
+        return self.steps[-1][1].predict_proba(Xt, **predict_proba_params)
+
+    @available_if(_final_estimator_has("score"))
+    def score(self, X, y=None, sample_weight=None):
+        Xt = X
+        for _, name, transform in self._iter(with_final=False):
+            # NEW CODE
+            y_param = False
+            for param in signature(transform.transform).parameters.values():
+                if param.name == 'y':
+                    y_param = True
+
+            if y_param:
+                Xt = transform.transform(Xt, y)
+            else:
+                Xt = transform.transform(Xt)
+
+            if isinstance(Xt, tuple):
+                Xt, y = Xt
+
+        score_params = {}
+        if sample_weight is not None:
+            score_params["sample_weight"] = sample_weight
+        return self.steps[-1][1].score(Xt, y, **score_params)
 
 
 class OptimalModelPipeline:
@@ -125,7 +215,7 @@ class OptimalModelPipeline:
             random_state=None
     ):
         self._optimal_model = BayesSearchCV(
-            pipeline,
+            estimator=pipeline,
             search_spaces=search_spaces,
             n_jobs=n_jobs,
             n_iter=n_iter,
@@ -145,7 +235,30 @@ class OptimalModelPipeline:
         return self._optimal_model.score(X, y)
 
 
-class TeacherLabeledAugmentedPipeline(OptimalModelPipeline):
+class PreprocessorPipeline:
+    def __init__(
+            self,
+            imputer,
+            scaler,
+            encoder
+    ):
+        self._pipeline = CustomPipeline(steps=[
+            ('imputer', imputer),
+            ('encoder', encoder),
+            ('scaler', scaler)
+        ])
+
+    def fit(self, X, y=None):
+        return self._pipeline.fit(X, y)
+
+    def transform(self, X, y=None):
+        return self._pipeline.transform(X, y)
+
+    def fit_transform(self, X, y=None):
+        return self._pipeline.fit_transform(X, y)
+
+
+class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
     def __init__(
             self,
             imputer,
@@ -174,7 +287,6 @@ class TeacherLabeledAugmentedPipeline(OptimalModelPipeline):
         ])
 
         super().__init__(
-            self,
             pipeline=pipeline,
             search_spaces=search_spaces,
             n_jobs=n_jobs,
@@ -186,7 +298,7 @@ class TeacherLabeledAugmentedPipeline(OptimalModelPipeline):
         )
 
 
-class GeneratorLabeledAugmentedPipeline:
+class GeneratorLabeledAugmentedStudentPipeline:
     def __init__(
             self,
             imputer,
@@ -217,13 +329,46 @@ class GeneratorLabeledAugmentedPipeline:
         ])
 
         super().__init__(
-            self,
             pipeline=pipeline,
             search_spaces=search_spaces,
             n_jobs=n_jobs,
             n_iter=n_iter,
             cv=cv,
             scoring=scoring,
+            verbose=verbose,
+            random_state=random_state
+        )
+
+
+class BaselineStudentPipeline(OptimalModelPipeline):
+    def __init__(
+        self,
+        imputer,
+        encoder,
+        scaler,
+        student,
+        search_spaces,
+        scoring,
+        n_iter=50,
+        cv=10,
+        n_jobs=-1,
+        verbose=10,
+        random_state=None
+    ):
+        pipeline = CustomPipeline(steps=[
+            ('imputer', imputer),
+            ('encoder', encoder),
+            ('scaler', scaler),
+            ('student', student)
+        ])
+
+        super().__init__(
+            pipeline=pipeline,
+            search_spaces=search_spaces,
+            scoring=scoring,
+            n_iter=n_iter,
+            cv=cv,
+            n_jobs=n_jobs,
             verbose=verbose,
             random_state=random_state
         )
