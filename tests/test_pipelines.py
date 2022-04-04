@@ -76,39 +76,18 @@ y = adult['income'].map({'<=50K': 0, '>50K': 1})
 # X = X.head(50)
 # y = y.head(50)
 
-from skopt import BayesSearchCV
 from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
 
-teacher_training_pipeline = TeacherTrainingPipeline(
+teacher_pipeline = RandomForestClassifierTeacherPipeline(
     imputer=SimpleImputer(strategy='most_frequent'),
     encoder=ce.TargetEncoder(),
-    scaler=RobustScaler(),
-    teacher=RandomForestClassifier(random_state=42)
+    scaler=RobustScaler()
 )
+teacher_pipeline.fit(X_train, y_train)
 
-opt = BayesSearchCV(
-    teacher_training_pipeline.get_pipeline(),
-    {
-        'teacher__n_estimators': (5,5000),
-        'teacher__max_features': ['auto','sqrt'],
-        'teacher__max_depth': (2,90),
-        'teacher__min_samples_split': (2,10),
-        'teacher__min_samples_leaf': (1,7),
-        'teacher__bootstrap': ["True","False"]
-    },
-    n_iter=25,
-    cv=5,
-    scoring='roc_auc',
-    verbose=5
-)
-opt.fit(X_train, y_train)
-
-print("val. score: %s" % opt.best_score_)
-print("test score: %s" % opt.score(X_test, y_test))
-
-teacher_training_pipeline.fit(X, y)
+print("test score: %s" % teacher_pipeline.score(X_test, y_test))
 
 # random_forest_classifier = RandomForestClassifier()
 # random_forest_classifier.fit(X, y)
