@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.pipeline import Pipeline
+from sklearn.pipeline import _fit_transform_one
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.validation import check_memory
@@ -22,7 +23,7 @@ class CustomPipeline(Pipeline):
         # Setup the memory
         memory = check_memory(self.memory)
 
-        fit_transform_one_cached = memory.cache(self._fit_transform_one)
+        fit_transform_one_cached = memory.cache(_fit_transform_one)
 
         for (step_idx, name, transformer) in self._iter(
                 with_final=False, filter_passthrough=False
@@ -135,8 +136,7 @@ class OptimalModelPipeline:
         )
 
     def fit(self, X, y):
-        self._optimal_model.fit(X, y)
-        return self
+        return self._optimal_model.fit(X, y)
 
     def predict(self, X):
         return self._optimal_model.predict(X)
