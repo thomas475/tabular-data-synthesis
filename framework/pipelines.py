@@ -278,8 +278,8 @@ class RandomForestClassifierTeacherPipeline(TeacherPipeline):
                 'teacher__bootstrap': ["True", "False"]
             },
             scoring='roc_auc',
-            n_iter=50,
-            cv=10,
+            n_iter=25,
+            cv=5,
             n_jobs=-1,
             verbose=10,
             random_state=None
