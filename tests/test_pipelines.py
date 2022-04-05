@@ -19,8 +19,6 @@ from skopt.space import Real, Categorical, Integer
 search_spaces = {
     'decision_tree_classifier': {
         "student__max_depth": Integer(1, 6),
-        "student__max_features": Integer(1, 9),
-        "student__min_samples_leaf": Integer(1, 9),
         "student__criterion": Categorical(["gini", "entropy"])
     },
     'smote': {
@@ -28,9 +26,26 @@ search_spaces = {
     },
     'racog': {
         'sampler__burnin': Integer(50, 250),
-        'sampler__lag': Integer(1, 5)
+        'sampler__lag': Integer(1, 30)
     },
-    'gan': {
+    'vanilla_gan': {
+        'sampler__epochs': Integer(1, 1), # fix
+        'sampler__batch_size': Integer(32, 256),
+        'sampler__learning_rate': Real(0.0001, 0.1),
+        'sampler__noise_dim': Integer(64, 512),
+        'sampler__layers_dim': Integer(32, 256)
+    },
+    'conditional_gan': {
+        'sampler__epochs': Integer(1, 1),  # fix
+        'sampler__epochs': Integer(1, 10),
+        'sampler__batch_size': Integer(32, 256),
+        'sampler__learning_rate': Real(0.0001, 0.1),
+        'sampler__noise_dim': Integer(64, 512),
+        'sampler__layers_dim': Integer(32, 256)
+    },
+    'dragan': {
+        'sampler__epochs': Integer(1, 1), # fix
+        'sampler__discriminator_updates_per_step': Integer(1, 5),
         'sampler__batch_size': Integer(32, 256),
         'sampler__learning_rate': Real(0.0001, 0.1),
         'sampler__noise_dim': Integer(64, 512),
@@ -93,33 +108,34 @@ samplers = [
 adult = pd.read_csv('../data/adult.csv')
 X = adult.drop(columns='income')
 X = X.replace({'?': np.NaN})
+X.columns = range(0, len(X.columns))
 y = adult['income'].map({'<=50K': 0, '>50K': 1})
+y.name = len(X.columns)
 
 # pipeline.fit_transform(X, y)
 
 # =========================================================================== #
 
-X = X.head(1000)
-y = y.head(1000)
+X = X.head(2000)
+y = y.head(2000)
 
 from sklearn.model_selection import train_test_split
 
 imputer = SimpleImputer(strategy='most_frequent')
 encoder = ce.TargetEncoder()
 scaler = RobustScaler()
-sampler = UnlabeledConditionalGANSampler
 labeler = Labeler
 combiner = DatasetCombiner
-student = DecisionTreeClassifier
+student_model = DecisionTreeClassifier
+student_type = 'decision_tree_classifier'
 
-n_iter=10
-cv=2
-n_jobs=1
-n_points=3
+n_iter = 4
+cv = 2
+n_jobs = 1
+n_points = 2
 scorer = 'roc_auc'
-# scorer = None
-verbose=100
-random_state=42
+verbose = 100
+random_state = 42
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
 
@@ -150,7 +166,7 @@ baseline_student = BaselineStudentPipeline(
     imputer=imputer,
     encoder=encoder,
     scaler=scaler,
-    student=student(),
+    student=student_model(random_state=random_state),
     search_spaces={
         **search_spaces['decision_tree_classifier']
     },
@@ -164,32 +180,52 @@ baseline_student = BaselineStudentPipeline(
 )
 baseline_student.fit(X_train, y_train)
 
-student = TeacherLabeledAugmentedStudentPipeline(
-    imputer=imputer,
-    encoder=encoder,
-    scaler=scaler,
-    sampler=sampler(sample_multiplication_factor=1, epochs=2),
-    teacher=labeler(trained_model=teacher),
-    combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
-    student=student(),
-    search_spaces={
-        **search_spaces['decision_tree_classifier'],
-        **search_spaces['gan']
-    },
-    n_iter=n_iter,
-    cv=cv,
-    n_jobs=n_jobs,
-    n_points=n_points,
-    scoring=scorer,
-    verbose=verbose,
-    random_state=random_state
-)
-student.fit(X_train, y_train)
+results = {}
 
-teacher_score = teacher.score(X_test, y_test)
-baseline_student_score = baseline_student.score(X_test, y_test)
-augmented_student_score = student.score(X_test, y_test)
+for name, sampler_type, sampler in [
+    # ('prop_smote', 'smote', ProportionalSMOTESampler),
+    # ('unlb_smote', 'smote', UnlabeledSMOTESampler),
+    # ('prop_racog', 'racog', ProportionalRACOGSampler),
+    # ('unlb_racog', 'racog', UnlabeledRACOGSampler),
+    # ('prop_gan', 'vanilla_gan', ProportionalVanillaGANSampler),
+    # ('unlb_gan', 'vanilla_gan', UnlabeledVanillaGANSampler),
+    # ('prop_cgan', 'conditional_gan', ProportionalConditionalGANSampler),
+    # ('unlb_cgan', 'conditional_gan', UnlabeledConditionalGANSampler),
+    # ('prop_dragan', 'dragan', ProportionalDRAGANSampler),
+    # ('unlb_dragan', 'dragan', UnlabeledDRAGANSampler)
+]:
 
-print('teacher auc:', teacher_score)
-print("baseline student auc:", baseline_student_score)
-print("augmented student auc:", augmented_student_score)
+    student = TeacherLabeledAugmentedStudentPipeline(
+        imputer=imputer,
+        encoder=encoder,
+        scaler=scaler,
+        sampler=sampler(sample_multiplication_factor=1),
+        teacher=labeler(trained_model=teacher),
+        combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
+        student=student_model(),
+        search_spaces={
+            **search_spaces[student_type],
+            **search_spaces[sampler_type]
+        },
+        n_iter=n_iter,
+        cv=cv,
+        n_jobs=n_jobs,
+        n_points=n_points,
+        scoring=scorer,
+        verbose=verbose,
+        random_state=random_state
+    )
+    student.fit(X_train, y_train)
+
+    teacher_auc = teacher.score(X_test, y_test)
+    baseline_student_auc = baseline_student.score(X_test, y_test)
+    student_auc = student.score(X_test, y_test)
+
+    results[name] = [teacher_auc, baseline_student_auc, student_auc]
+
+for name in results:
+    print(name)
+    print('teacher auc:', results[name][0])
+    print("baseline student auc:", results[name][1])
+    print("student auc:", results[name][2])
+    print('\n')

@@ -504,9 +504,10 @@ class ProportionalVanillaGANSampler(Sampler):
         # reset dragan models
         self._vanilla_gan = {}
 
-        # change the column titles for easier use
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         y = pd.Series(y).copy().reset_index(drop=True)
+
+        # change the column titles for easier use
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
         num_cols = original_dataset.columns.copy().tolist()
 

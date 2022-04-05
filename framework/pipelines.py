@@ -13,7 +13,12 @@ from skopt import BayesSearchCV
 
 from inspect import signature
 
+
 class CustomPipeline(Pipeline):
+    def __init__(self, steps, predict_ignored_steps=[], memory=None, verbose=False):
+        self.predict_ignored_steps = predict_ignored_steps
+        super().__init__(steps=steps, memory=memory, verbose=verbose)
+
     """
     Modified version of sklearn.pipeline.Pipeline that enables transformers to
     update X and y in each pipeline step.
@@ -155,19 +160,20 @@ class CustomPipeline(Pipeline):
         Xt = X
         y = None
         for _, name, transform in self._iter(with_final=False):
-            # NEW CODE
-            y_param = False
-            for param in signature(transform.transform).parameters.values():
-                if param.name == 'y':
-                    y_param = True
+            if name not in self.predict_ignored_steps:
+                # NEW CODE
+                y_param = False
+                for param in signature(transform.transform).parameters.values():
+                    if param.name == 'y':
+                        y_param = True
 
-            if y_param:
-                Xt = transform.transform(Xt, y)
-            else:
-                Xt = transform.transform(Xt)
+                if y_param:
+                    Xt = transform.transform(Xt, y)
+                else:
+                    Xt = transform.transform(Xt)
 
-            if isinstance(Xt, tuple):
-                Xt, y = Xt
+                if isinstance(Xt, tuple):
+                    Xt, y = Xt
 
         return self.steps[-1][1].predict(Xt, **predict_params)
 
@@ -187,19 +193,21 @@ class CustomPipeline(Pipeline):
         Xt = X
         y = None
         for _, name, transform in self._iter(with_final=False):
-            # NEW CODE
-            y_param = False
-            for param in signature(transform.transform).parameters.values():
-                if param.name == 'y':
-                    y_param = True
+            if name not in self.predict_ignored_steps:
+                # NEW CODE
+                y_param = False
+                for param in signature(transform.transform).parameters.values():
+                    if param.name == 'y':
+                        y_param = True
 
-            if y_param:
-                Xt = transform.transform(Xt, y)
-            else:
-                Xt = transform.transform(Xt)
+                if y_param:
+                    Xt = transform.transform(Xt, y)
+                else:
+                    Xt = transform.transform(Xt)
 
-            if isinstance(Xt, tuple):
-                Xt, y = Xt
+                if isinstance(Xt, tuple):
+                    Xt, y = Xt
+
         return self.steps[-1][1].predict_proba(Xt, **predict_proba_params)
 
     @available_if(_final_estimator_has("score"))
@@ -303,15 +311,22 @@ class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
             verbose=10,
             random_state=None
     ):
-        pipeline = CustomPipeline(steps=[
-            ('imputer', imputer),
-            ('encoder', encoder),
-            ('scaler', scaler),
-            ('sampler', sampler),
-            ('teacher', teacher),
-            ('combiner', combiner),
-            ('student', student)
-        ])
+        pipeline = CustomPipeline(
+            steps=[
+                ('imputer', imputer),
+                ('encoder', encoder),
+                ('scaler', scaler),
+                ('sampler', sampler),
+                ('teacher', teacher),
+                ('combiner', combiner),
+                ('student', student)
+            ],
+            predict_ignored_steps=[
+                'sampler',
+                'teacher',
+                'combiner'
+            ]
+        )
 
         super().__init__(
             pipeline=pipeline,
@@ -346,16 +361,24 @@ class GeneratorLabeledAugmentedStudentPipeline:
             verbose=10,
             random_state=None
     ):
-        pipeline = CustomPipeline(steps=[
-            ('imputer', imputer),
-            ('encoder', encoder),
-            ('scaler', scaler),
-            ('injector', injector),
-            ('sampler', sampler),
-            ('extractor', extractor),
-            ('combiner', combiner),
-            ('student', student)
-        ])
+        pipeline = CustomPipeline(
+            steps=[
+                ('imputer', imputer),
+                ('encoder', encoder),
+                ('scaler', scaler),
+                ('injector', injector),
+                ('sampler', sampler),
+                ('extractor', extractor),
+                ('combiner', combiner),
+                ('student', student)
+            ],
+            predict_ignored_steps=[
+                'injector',
+                'sampler',
+                'extractor',
+                'combiner'
+            ]
+        )
 
         super().__init__(
             pipeline=pipeline,
@@ -372,19 +395,19 @@ class GeneratorLabeledAugmentedStudentPipeline:
 
 class BaselineStudentPipeline(OptimalModelPipeline):
     def __init__(
-        self,
-        imputer,
-        encoder,
-        scaler,
-        student,
-        search_spaces,
-        scoring,
-        n_iter=50,
-        n_points=1,
-        cv=10,
-        n_jobs=-1,
-        verbose=10,
-        random_state=None
+            self,
+            imputer,
+            encoder,
+            scaler,
+            student,
+            search_spaces,
+            scoring,
+            n_iter=50,
+            n_points=1,
+            cv=10,
+            n_jobs=-1,
+            verbose=10,
+            random_state=None
     ):
         pipeline = CustomPipeline(steps=[
             ('imputer', imputer),
