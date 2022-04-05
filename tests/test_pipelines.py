@@ -18,7 +18,7 @@ from skopt.space import Real, Categorical, Integer
 
 search_spaces = {
     'decision_tree_classifier': {
-        "student__max_depth": Integer(0, 6),
+        "student__max_depth": Integer(1, 6),
         "student__max_features": Integer(1, 9),
         "student__min_samples_leaf": Integer(1, 9),
         "student__criterion": Categorical(["gini", "entropy"])
@@ -107,12 +107,19 @@ from sklearn.model_selection import train_test_split
 imputer = SimpleImputer(strategy='most_frequent')
 encoder = ce.TargetEncoder()
 scaler = RobustScaler()
-sampler = ProportionalVanillaGANSampler
+sampler = UnlabeledConditionalGANSampler
 labeler = Labeler
 combiner = DatasetCombiner
 student = DecisionTreeClassifier
 
-scorer = None
+n_iter=10
+cv=2
+n_jobs=1
+n_points=3
+scorer = 'roc_auc'
+# scorer = None
+verbose=100
+random_state=42
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
 
@@ -129,12 +136,15 @@ teacher = RandomForestClassifierTeacherPipeline(
     imputer=imputer,
     encoder=encoder,
     scaler=scaler,
-    n_iter=1,
-    cv=2,
-    scoring=scorer
+    n_iter=n_iter,
+    cv=cv,
+    n_jobs=n_jobs,
+    n_points=n_points,
+    scoring=scorer,
+    verbose=verbose,
+    random_state=random_state
 )
 teacher.fit(X_train, y_train)
-print('teacher auc:', teacher.score(X_test, y_test))
 
 baseline_student = BaselineStudentPipeline(
     imputer=imputer,
@@ -144,20 +154,21 @@ baseline_student = BaselineStudentPipeline(
     search_spaces={
         **search_spaces['decision_tree_classifier']
     },
-    n_iter=1,
-    cv=2,
-    n_jobs=1,
+    n_iter=n_iter,
+    cv=cv,
+    n_jobs=n_jobs,
+    n_points=n_points,
     scoring=scorer,
-    random_state=42
+    verbose=verbose,
+    random_state=random_state
 )
 baseline_student.fit(X_train, y_train)
-print("baseline student auc:", baseline_student.score(X_test, y_test))
 
 student = TeacherLabeledAugmentedStudentPipeline(
     imputer=imputer,
     encoder=encoder,
     scaler=scaler,
-    sampler=sampler(sample_multiplication_factor=1),
+    sampler=sampler(sample_multiplication_factor=1, epochs=2),
     teacher=labeler(trained_model=teacher),
     combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
     student=student(),
@@ -165,11 +176,20 @@ student = TeacherLabeledAugmentedStudentPipeline(
         **search_spaces['decision_tree_classifier'],
         **search_spaces['gan']
     },
-    n_iter=1,
-    cv=2,
+    n_iter=n_iter,
+    cv=cv,
+    n_jobs=n_jobs,
+    n_points=n_points,
     scoring=scorer,
-    n_jobs=1,
-    random_state=42
+    verbose=verbose,
+    random_state=random_state
 )
 student.fit(X_train, y_train)
-student.predict(X_test)
+
+teacher_score = teacher.score(X_test, y_test)
+baseline_student_score = baseline_student.score(X_test, y_test)
+augmented_student_score = student.score(X_test, y_test)
+
+print('teacher auc:', teacher_score)
+print("baseline student auc:", baseline_student_score)
+print("augmented student auc:", augmented_student_score)

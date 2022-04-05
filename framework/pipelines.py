@@ -70,9 +70,8 @@ class CustomPipeline(Pipeline):
 
             # print(name)
             # print(pd.concat([pd.DataFrame(X).reset_index(drop=True), pd.Series(y).reset_index(drop=True)], axis=1))
-
-            print(name)
-            print('len(X):', np.shape(X), ' len(y):', np.shape(y))
+            # print(name)
+            # print('len(X):', np.shape(X), ' len(y):', np.shape(y))
 
             # Replace the transformer of the step with the fitted
             # transformer. This is necessary when loading the transformer
@@ -236,6 +235,7 @@ class OptimalModelPipeline:
             n_iter=50,
             cv=10,
             n_jobs=-1,
+            n_points=1,
             verbose=10,
             random_state=None
     ):
@@ -244,6 +244,7 @@ class OptimalModelPipeline:
             search_spaces=search_spaces,
             n_jobs=n_jobs,
             n_iter=n_iter,
+            n_points=n_points,
             cv=cv,
             scoring=scoring,
             verbose=verbose,
@@ -298,6 +299,7 @@ class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
             n_iter=50,
             cv=10,
             n_jobs=-1,
+            n_points=1,
             verbose=10,
             random_state=None
     ):
@@ -316,6 +318,7 @@ class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
             search_spaces=search_spaces,
             n_jobs=n_jobs,
             n_iter=n_iter,
+            n_points=n_points,
             cv=cv,
             scoring=scoring,
             verbose=verbose,
@@ -337,6 +340,7 @@ class GeneratorLabeledAugmentedStudentPipeline:
             search_spaces,
             scoring,
             n_iter=50,
+            n_points=1,
             cv=10,
             n_jobs=-1,
             verbose=10,
@@ -358,6 +362,7 @@ class GeneratorLabeledAugmentedStudentPipeline:
             search_spaces=search_spaces,
             n_jobs=n_jobs,
             n_iter=n_iter,
+            n_points=n_points,
             cv=cv,
             scoring=scoring,
             verbose=verbose,
@@ -375,6 +380,7 @@ class BaselineStudentPipeline(OptimalModelPipeline):
         search_spaces,
         scoring,
         n_iter=50,
+        n_points=1,
         cv=10,
         n_jobs=-1,
         verbose=10,
@@ -392,6 +398,7 @@ class BaselineStudentPipeline(OptimalModelPipeline):
             search_spaces=search_spaces,
             scoring=scoring,
             n_iter=n_iter,
+            n_points=n_points,
             cv=cv,
             n_jobs=n_jobs,
             verbose=verbose,
@@ -409,6 +416,7 @@ class TeacherPipeline(OptimalModelPipeline):
             search_spaces,
             scoring,
             n_iter=50,
+            n_points=1,
             cv=10,
             n_jobs=-1,
             verbose=10,
@@ -426,6 +434,7 @@ class TeacherPipeline(OptimalModelPipeline):
             search_spaces=search_spaces,
             scoring=scoring,
             n_iter=n_iter,
+            n_points=n_points,
             cv=cv,
             n_jobs=n_jobs,
             verbose=verbose,
@@ -449,6 +458,7 @@ class RandomForestClassifierTeacherPipeline(TeacherPipeline):
             },
             scoring='roc_auc',
             n_iter=25,
+            n_points=1,
             cv=5,
             n_jobs=-1,
             verbose=10,
@@ -462,6 +472,7 @@ class RandomForestClassifierTeacherPipeline(TeacherPipeline):
             search_spaces=search_spaces,
             scoring=scoring,
             n_iter=n_iter,
+            n_points=n_points,
             cv=cv,
             n_jobs=n_jobs,
             verbose=verbose,
