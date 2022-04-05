@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.pipeline import _final_estimator_has, _fit_transform_one
@@ -67,8 +68,11 @@ class CustomPipeline(Pipeline):
             if isinstance(X, tuple):
                 X, y = X
 
+            # print(name)
+            # print(pd.concat([pd.DataFrame(X).reset_index(drop=True), pd.Series(y).reset_index(drop=True)], axis=1))
+
             print(name)
-            print(pd.concat([pd.DataFrame(X).reset_index(drop=True), pd.Series(y).reset_index(drop=True)], axis=1))
+            print('len(X):', np.shape(X), ' len(y):', np.shape(y))
 
             # Replace the transformer of the step with the fitted
             # transformer. This is necessary when loading the transformer
@@ -146,6 +150,27 @@ class CustomPipeline(Pipeline):
 
             # NEW CODE
             return Xt, y
+
+    @available_if(_final_estimator_has("predict"))
+    def predict(self, X, **predict_params):
+        Xt = X
+        y = None
+        for _, name, transform in self._iter(with_final=False):
+            # NEW CODE
+            y_param = False
+            for param in signature(transform.transform).parameters.values():
+                if param.name == 'y':
+                    y_param = True
+
+            if y_param:
+                Xt = transform.transform(Xt, y)
+            else:
+                Xt = transform.transform(Xt)
+
+            if isinstance(Xt, tuple):
+                Xt, y = Xt
+
+        return self.steps[-1][1].predict(Xt, **predict_params)
 
     @available_if(_final_estimator_has("fit_predict"))
     def fit_predict(self, X, y=None, **fit_params):

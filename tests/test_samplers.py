@@ -241,7 +241,6 @@ def dragan_test_2():
 # unlabeled_smote()
 # proportional_racog()
 # unlabeled_racog()
-# unlabeled_vanilla_gan()
 # vanilla_gan_test_1()
 # vanilla_gan_test_2()
 # pipeline_test()

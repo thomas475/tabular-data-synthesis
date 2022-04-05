@@ -102,7 +102,7 @@ class ProportionalSMOTESampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -209,7 +209,7 @@ class UnlabeledSMOTESampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -313,7 +313,7 @@ class ProportionalRACOGSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -408,7 +408,7 @@ class UnlabeledRACOGSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -546,7 +546,7 @@ class ProportionalVanillaGANSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -676,7 +676,7 @@ class UnlabeledVanillaGANSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -810,7 +810,7 @@ class ProportionalConditionalGANSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -957,7 +957,7 @@ class UnlabeledConditionalGANSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -1102,7 +1102,7 @@ class ProportionalDRAGANSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -1242,7 +1242,7 @@ class UnlabeledDRAGANSampler(Sampler):
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=X.columns)
+            return pd.DataFrame(columns=pd.DataFrame(X).columns)
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):

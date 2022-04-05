@@ -99,18 +99,20 @@ y = adult['income'].map({'<=50K': 0, '>50K': 1})
 
 # =========================================================================== #
 
-# X = X.head(50)
-# y = y.head(50)
+X = X.head(1000)
+y = y.head(1000)
 
 from sklearn.model_selection import train_test_split
 
 imputer = SimpleImputer(strategy='most_frequent')
 encoder = ce.TargetEncoder()
 scaler = RobustScaler()
-sampler = ProportionalRACOGSampler
+sampler = ProportionalVanillaGANSampler
 labeler = Labeler
 combiner = DatasetCombiner
 student = DecisionTreeClassifier
+
+scorer = None
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
 
@@ -128,12 +130,11 @@ teacher = RandomForestClassifierTeacherPipeline(
     encoder=encoder,
     scaler=scaler,
     n_iter=1,
-    cv=2
+    cv=2,
+    scoring=scorer
 )
 teacher.fit(X_train, y_train)
 print('teacher auc:', teacher.score(X_test, y_test))
-
-from framework.pipelines import CustomPipeline
 
 baseline_student = BaselineStudentPipeline(
     imputer=imputer,
@@ -145,8 +146,8 @@ baseline_student = BaselineStudentPipeline(
     },
     n_iter=1,
     cv=2,
-    scoring='roc_auc',
     n_jobs=1,
+    scoring=scorer,
     random_state=42
 )
 baseline_student.fit(X_train, y_train)
@@ -156,35 +157,19 @@ student = TeacherLabeledAugmentedStudentPipeline(
     imputer=imputer,
     encoder=encoder,
     scaler=scaler,
-    sampler=sampler(sample_multiplication_factor=4),
+    sampler=sampler(sample_multiplication_factor=1),
     teacher=labeler(trained_model=teacher),
     combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
     student=student(),
     search_spaces={
         **search_spaces['decision_tree_classifier'],
-        **search_spaces['racog']
+        **search_spaces['gan']
     },
     n_iter=1,
     cv=2,
-    scoring='roc_auc',
+    scoring=scorer,
     n_jobs=1,
     random_state=42
 )
 student.fit(X_train, y_train)
 student.predict(X_test)
-print("student auc:", student.score(X_test, y_test))
-
-# random_forest_classifier = RandomForestClassifier()
-# random_forest_classifier.fit(X, y)
-
-# pipeline = TeacherLabeledAugmentationPipeline(
-#     imputer=SimpleImputer(strategy='most_frequent'),
-#     encoder=ce.TargetEncoder(),
-#     scaler=RobustScaler(),
-#     sampler=ProportionalSMOTESampler(sample_multiplication_factor=1),
-#     teacher=Labeler(trained_model=random_forest_classifier),
-#     combiner=DatasetCombiner(X=X, y=y),
-#     student=DecisionTreeClassifier()
-# )
-#
-# pipeline.fit_transform(X, y)
