@@ -17,6 +17,8 @@ from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
 from framework.racog import RACOG
 
 import warnings
+import tensorflow as tf
+import random
 
 
 class Sampler(BaseEstimator, TransformerMixin):
@@ -555,6 +557,9 @@ class ProportionalVanillaGANSampler(Sampler):
     sample_interval: int, default=50
         The interval between samples.
 
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
     References
     ----------
 
@@ -571,7 +576,8 @@ class ProportionalVanillaGANSampler(Sampler):
             noise_dim=264,
             layers_dim=128,
             epochs=300,
-            sample_interval=50
+            sample_interval=50,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.batch_size = batch_size
@@ -581,8 +587,11 @@ class ProportionalVanillaGANSampler(Sampler):
         self.layers_dim = layers_dim
         self.epochs = epochs
         self.sample_interval = sample_interval
+        self.random_state = random_state
 
     def fit(self, X, y=None):
+        _set_global_random_state(self.random_state)
+
         # reset vanilla gan models
         self._vanilla_gan = {}
 
@@ -627,6 +636,8 @@ class ProportionalVanillaGANSampler(Sampler):
         Sample proportionally from each of the vanilla GANs trained on the
         subsets split by class. Returns only the generated data.
         """
+        _set_global_random_state(self.random_state)
+
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=pd.DataFrame(X).columns)
@@ -700,6 +711,9 @@ class UnlabeledVanillaGANSampler(Sampler):
     sample_interval: int, default=50
         The interval between samples.
 
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
     References
     ----------
 
@@ -716,7 +730,8 @@ class UnlabeledVanillaGANSampler(Sampler):
             noise_dim=264,
             layers_dim=128,
             epochs=300,
-            sample_interval=50
+            sample_interval=50,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.batch_size = batch_size
@@ -726,8 +741,11 @@ class UnlabeledVanillaGANSampler(Sampler):
         self.layers_dim = layers_dim
         self.epochs = epochs
         self.sample_interval = sample_interval
+        self.random_state = random_state
 
     def fit(self, X, y=None):
+        _set_global_random_state(self.random_state)
+
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(original_dataset.columns)
 
@@ -757,6 +775,8 @@ class UnlabeledVanillaGANSampler(Sampler):
         """
         Returns only the generated data.
         """
+        _set_global_random_state(self.random_state)
+
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=pd.DataFrame(X).columns)
@@ -822,6 +842,9 @@ class ProportionalConditionalGANSampler(Sampler):
     sample_interval: int, default=50
         The interval between samples.
 
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
     References
     ----------
 
@@ -839,6 +862,7 @@ class ProportionalConditionalGANSampler(Sampler):
             layers_dim=128,
             epochs=300,
             sample_interval=50,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.batch_size = batch_size
@@ -848,8 +872,11 @@ class ProportionalConditionalGANSampler(Sampler):
         self.layers_dim = layers_dim
         self.epochs = epochs
         self.sample_interval = sample_interval
+        self.random_state = random_state
 
     def fit(self, X, y=None):
+        _set_global_random_state(self.random_state)
+
         # set the number of classes
         unique, _ = np.unique(y, return_counts=True)
         self._cgan = CGAN(
@@ -891,6 +918,8 @@ class ProportionalConditionalGANSampler(Sampler):
         Sample a proportional number of samples from the generated conditional
         GAN model. Returns only the generated data.
         """
+        _set_global_random_state(self.random_state)
+
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=pd.DataFrame(X).columns)
@@ -972,6 +1001,9 @@ class UnlabeledConditionalGANSampler(Sampler):
     sample_interval: int, default=50
         The interval between samples.
 
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
     References
     ----------
 
@@ -988,7 +1020,8 @@ class UnlabeledConditionalGANSampler(Sampler):
             noise_dim=264,
             layers_dim=128,
             epochs=300,
-            sample_interval=50
+            sample_interval=50,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.batch_size = batch_size
@@ -998,8 +1031,11 @@ class UnlabeledConditionalGANSampler(Sampler):
         self.layers_dim = layers_dim
         self.epochs = epochs
         self.sample_interval = sample_interval
+        self.random_state = random_state
 
     def fit(self, X, y=None):
+        _set_global_random_state(self.random_state)
+
         # change the column titles for easier use
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
@@ -1038,6 +1074,8 @@ class UnlabeledConditionalGANSampler(Sampler):
         Sample a proportional number of samples from the generated conditional
         GAN model. Returns only the generated data.
         """
+        _set_global_random_state(self.random_state)
+
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=pd.DataFrame(X).columns)
@@ -1109,6 +1147,9 @@ class ProportionalDRAGANSampler(Sampler):
     sample_interval: int, default=50
         The interval between samples.
 
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
     References
     ----------
 
@@ -1126,7 +1167,8 @@ class ProportionalDRAGANSampler(Sampler):
             noise_dim=264,
             layers_dim=128,
             epochs=300,
-            sample_interval=50
+            sample_interval=50,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.discriminator_updates_per_step = discriminator_updates_per_step
@@ -1137,8 +1179,11 @@ class ProportionalDRAGANSampler(Sampler):
         self.layers_dim = layers_dim
         self.epochs = epochs
         self.sample_interval = sample_interval
+        self.random_state = random_state
 
     def fit(self, X, y):
+        _set_global_random_state(self.random_state)
+
         # reset dragan models
         self._dragan = {}
 
@@ -1183,6 +1228,8 @@ class ProportionalDRAGANSampler(Sampler):
         Sample proportionally from each of the DRAGANs trained on the subsets
         split by class. Returns only the generated data.
         """
+        _set_global_random_state(self.random_state)
+
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=pd.DataFrame(X).columns)
@@ -1260,6 +1307,9 @@ class UnlabeledDRAGANSampler(Sampler):
     sample_interval: int, default=50
         The interval between samples.
 
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
     References
     ----------
 
@@ -1277,7 +1327,8 @@ class UnlabeledDRAGANSampler(Sampler):
             noise_dim=264,
             layers_dim=128,
             epochs=300,
-            sample_interval=50
+            sample_interval=50,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.discriminator_updates_per_step = discriminator_updates_per_step
@@ -1288,8 +1339,11 @@ class UnlabeledDRAGANSampler(Sampler):
         self.layers_dim = layers_dim
         self.epochs = epochs
         self.sample_interval = sample_interval
+        self.random_state = random_state
 
     def fit(self, X, y=None):
+        _set_global_random_state(self.random_state)
+
         # change the column titles for easier use
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
@@ -1323,6 +1377,8 @@ class UnlabeledDRAGANSampler(Sampler):
         Sample the requested number of samples from the trained GAN. Returns
         only the generated data.
         """
+        _set_global_random_state(self.random_state)
+
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
             return pd.DataFrame(columns=pd.DataFrame(X).columns)
@@ -1351,3 +1407,9 @@ def _convert_list_to_string_list(item_list):
     for item in item_list:
         string_list.append(str(item))
     return string_list
+
+
+def _set_global_random_state(random_state):
+    random.seed(random_state)
+    np.random.seed(random_state)
+    tf.random.set_seed(random_state)

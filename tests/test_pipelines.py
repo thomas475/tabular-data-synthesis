@@ -184,22 +184,22 @@ def run_pipeline_test():
     results = {}
 
     for name, sampler_type, sampler in [
-        # ('prop_smote', 'smote', ProportionalSMOTESampler),
-        # ('unlb_smote', 'smote', UnlabeledSMOTESampler),
-        # ('prop_racog', 'racog', ProportionalRACOGSampler),
-        # ('unlb_racog', 'racog', UnlabeledRACOGSampler),
-        # ('prop_gan', 'vanilla_gan', ProportionalVanillaGANSampler),
-        # ('unlb_gan', 'vanilla_gan', UnlabeledVanillaGANSampler),
-        # ('prop_cgan', 'conditional_gan', ProportionalConditionalGANSampler),
-        # ('unlb_cgan', 'conditional_gan', UnlabeledConditionalGANSampler),
+        ('prop_smote', 'smote', ProportionalSMOTESampler),
+        ('unlb_smote', 'smote', UnlabeledSMOTESampler),
+        ('prop_racog', 'racog', ProportionalRACOGSampler),
+        ('unlb_racog', 'racog', UnlabeledRACOGSampler),
+        ('prop_gan', 'vanilla_gan', ProportionalVanillaGANSampler),
+        ('unlb_gan', 'vanilla_gan', UnlabeledVanillaGANSampler),
+        ('prop_cgan', 'conditional_gan', ProportionalConditionalGANSampler),
+        ('unlb_cgan', 'conditional_gan', UnlabeledConditionalGANSampler),
         ('prop_dragan', 'dragan', ProportionalDRAGANSampler),
-        # ('unlb_dragan', 'dragan', UnlabeledDRAGANSampler)
+        ('unlb_dragan', 'dragan', UnlabeledDRAGANSampler)
     ]:
         student = TeacherLabeledAugmentedStudentPipeline(
             imputer=imputer,
             encoder=encoder,
             scaler=scaler,
-            sampler=sampler(sample_multiplication_factor=1),
+            sampler=sampler(sample_multiplication_factor=1, random_state=42),
             teacher=labeler(trained_model=teacher),
             combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
             student=student_model(),
