@@ -29,24 +29,24 @@ search_spaces = {
         'sampler__lag': Integer(1, 30)
     },
     'vanilla_gan': {
-        # 'sampler__epochs': Integer(1, 1), # fix
+        'sampler__epochs': Integer(1, 2), # fix
         'sampler__batch_size': Integer(32, 256),
-        'sampler__learning_rate': Real(0.0001, 0.1),
+        'sampler__learning_rate': Real(0.00001, 0.01),
         'sampler__noise_dim': Integer(64, 512),
         'sampler__layers_dim': Integer(32, 256)
     },
     'conditional_gan': {
-        # 'sampler__epochs': Integer(1, 1),  # fix
+        'sampler__epochs': Integer(1, 2), # fix
         'sampler__batch_size': Integer(32, 256),
-        'sampler__learning_rate': Real(0.0001, 0.1),
+        'sampler__learning_rate': Real(0.00001, 0.01),
         'sampler__noise_dim': Integer(64, 512),
         'sampler__layers_dim': Integer(32, 256)
     },
     'dragan': {
-        # 'sampler__epochs': Integer(1, 1), # fix
+        'sampler__epochs': Integer(1, 2), # fix
         'sampler__discriminator_updates_per_step': Integer(1, 5),
         'sampler__batch_size': Integer(32, 256),
-        'sampler__learning_rate': Real(0.0001, 0.1),
+        'sampler__learning_rate': Real(0.00001, 0.001),
         'sampler__noise_dim': Integer(64, 512),
         'sampler__layers_dim': Integer(32, 256)
     }
@@ -102,13 +102,13 @@ def run_pipeline_test():
     # pipeline = TeacherLabeledAugmentationPipeline(
     #     imputer=SimpleImputer(strategy='most_frequent'),
     #     encoder=ce.CatBoostEncoder(),
-    #     scaler=RobustScaler(),
+    #     scaler=RobustScaler(),.
     #     sampler=ProportionalConditionalGANSampler(sample_multiplication_factor=1, epochs=1)
     # )
 
     adult = pd.read_csv('../data/adult.csv')
     X = adult.drop(columns='income')
-    X = X.replace({'?': np.NaN})
+    X = X.replace({'?': np.nan})
     X.columns = range(0, len(X.columns))
     y = adult['income'].map({'<=50K': 0, '>50K': 1})
     y.name = len(X.columns)
@@ -186,13 +186,13 @@ def run_pipeline_test():
     for name, sampler_type, sampler in [
         # ('prop_smote', 'smote', ProportionalSMOTESampler),
         # ('unlb_smote', 'smote', UnlabeledSMOTESampler),
-        ('prop_racog', 'racog', ProportionalRACOGSampler),
+        # ('prop_racog', 'racog', ProportionalRACOGSampler),
         # ('unlb_racog', 'racog', UnlabeledRACOGSampler),
         # ('prop_gan', 'vanilla_gan', ProportionalVanillaGANSampler),
         # ('unlb_gan', 'vanilla_gan', UnlabeledVanillaGANSampler),
         # ('prop_cgan', 'conditional_gan', ProportionalConditionalGANSampler),
         # ('unlb_cgan', 'conditional_gan', UnlabeledConditionalGANSampler),
-        # ('prop_dragan', 'dragan', ProportionalDRAGANSampler),
+        ('prop_dragan', 'dragan', ProportionalDRAGANSampler),
         # ('unlb_dragan', 'dragan', UnlabeledDRAGANSampler)
     ]:
         student = TeacherLabeledAugmentedStudentPipeline(

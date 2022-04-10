@@ -583,7 +583,7 @@ class ProportionalVanillaGANSampler(Sampler):
         self.sample_interval = sample_interval
 
     def fit(self, X, y=None):
-        # reset dragan models
+        # reset vanilla gan models
         self._vanilla_gan = {}
 
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
@@ -624,8 +624,8 @@ class ProportionalVanillaGANSampler(Sampler):
 
     def transform(self, X, y=None):
         """
-        Sample proportionally from each of the DRAGANs trained on the subsets
-        split by class. Returns only the generated data.
+        Sample proportionally from each of the vanilla GANs trained on the
+        subsets split by class. Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
@@ -1138,7 +1138,7 @@ class ProportionalDRAGANSampler(Sampler):
         self.epochs = epochs
         self.sample_interval = sample_interval
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
         # reset dragan models
         self._dragan = {}
 
@@ -1178,7 +1178,7 @@ class ProportionalDRAGANSampler(Sampler):
 
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X, y):
         """
         Sample proportionally from each of the DRAGANs trained on the subsets
         split by class. Returns only the generated data.
