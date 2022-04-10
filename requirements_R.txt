@@ -1,4 +1,0 @@
-Install Rscript on your machine and run the following commands. You can choose
-a different library location. Remember to put the library folder on PATH.
-
-Rscript -e 'install.packages("imbalance", lib=".local/lib/R/site-library")'

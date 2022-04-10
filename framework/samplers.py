@@ -242,7 +242,7 @@ class UnlabeledSMOTESampler(Sampler):
         # filter user warning that fires because we do not use SMOTE simply for balancing the dataset
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            resampled_dummy_dataset, resampled_y_dummy = smote.fit_resample(dummy_dataset, y_dummy)
+            resampled_dummy_dataset, _ = smote.fit_resample(dummy_dataset, y_dummy)
         resampled_dummy_dataset = pd.DataFrame(resampled_dummy_dataset)
 
         # remove the dummy entry
@@ -281,12 +281,29 @@ class ProportionalRACOGSampler(Sampler):
     lag : int, default=20
         Number of iterations between new generated example for a minority one.
 
+    discretization : 'caim' or 'mdlp', default='caim'
+        Method for discretization of continuous variables.
+
+    continuous_distribution : 'normal' or 'laplace', default='normal'
+        The distribution used for sampling (reconstruct) continuous variables
+        after oversampling.
+
+    n_jobs : int, default=1
+        The number of jobs to run in parallel for sampling.
+
+    verbose : int, default=0
+        If greater than 0, enable verbose output.
+
+    random_state : int, RandomState instance or None, default=None
+        If int, 'random_state' is the seed used by the random number
+        generator; If 'RandomState' instance, random_state is the random
+        number generator; If 'None', the random number generator is the
+        'RandomState' instance used by 'np.random'.
+
     References
     ----------
 
-    .. [1] https://rdrr.io/cran/imbalance/man/racog.html
-
-    .. [2] B. Das, N. C. Krishnan and D. J. Cook, "RACOG and wRACOG: Two
+    .. [1] B. Das, N. C. Krishnan and D. J. Cook, "RACOG and wRACOG: Two
            Probabilistic Oversampling Techniques," in IEEE Transactions on
            Knowledge and Data Engineering, vol. 27, no. 1, pp. 222-234,
            1 Jan. 2015, doi: 10.1109/TKDE.2014.2324567.
@@ -297,19 +314,29 @@ class ProportionalRACOGSampler(Sampler):
             self,
             sample_multiplication_factor,
             burnin=100,
-            lag=20
+            lag=20,
+            discretization='caim',
+            continuous_distribution='normal',
+            n_jobs=1,
+            verbose=0,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.burnin = burnin
         self.lag = lag
+        self.discretization = discretization
+        self.continuous_distribution = continuous_distribution
+        self.n_jobs = n_jobs
+        self.verbose = verbose
+        self.random_state = random_state
 
     def fit(self, X, y):
         return self
 
     def transform(self, X, y):
         """
-        Split dataset by target vector and resample each subset independently.
-        Afterwards join the resampled subsets. Returns only the generated data.
+        Count number of occurrences of each class and resample proportionally.
+        Returns only the generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
@@ -322,28 +349,35 @@ class ProportionalRACOGSampler(Sampler):
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         y = pd.Series(y).copy().reset_index(drop=True)
 
-        # adding target column
-        target_column_title = str(len(original_dataset.columns))
-        original_dataset[target_column_title] = y
+        # calculate the number of occurrences per class
+        unique, counts = np.unique(y, return_counts=True)
+        occurrences_per_class_dict = dict(zip(unique, counts))
 
-        # split dataset into subsets according to the target column
-        original_subset_per_class = [
-            x for _, x in original_dataset.groupby(original_dataset[target_column_title])
-        ]
-
-        # resample each subset independently
-        resampled_subset_per_class = []
-        for original_subset in original_subset_per_class:
-            resampled_subset = RACOG(burnin=self.burnin, lag=self.lag).resample(
-                dataset=original_subset,
-                num_instances=int(self.sample_multiplication_factor * len(original_subset)),
-                class_attr=target_column_title
+        # set the amount of samples per class we want to have; includes original samples
+        sampling_strategy = {}
+        for class_name in occurrences_per_class_dict:
+            sampling_strategy[class_name] = int(
+                (self.sample_multiplication_factor + 1) * occurrences_per_class_dict[class_name]
             )
-            resampled_subset_per_class.append(resampled_subset)
 
-        # join the resampled subsets into one dataframe
-        resampled_dataset = pd.concat(resampled_subset_per_class, ignore_index=True)
-        resampled_dataset = resampled_dataset.drop(columns=[target_column_title])
+        racog = RACOG(
+            sampling_strategy=sampling_strategy,
+            burnin=self.burnin,
+            lag=self.lag,
+            discretization=self.discretization,
+            continuous_distribution=self.continuous_distribution,
+            n_jobs=self.n_jobs,
+            verbose=self.verbose,
+            random_state=self.random_state,
+            categorical_features='all',
+            only_sampled=True
+        )
+
+        # filter user warning that fires because we do not use RACOG simply for balancing the dataset
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            resampled_dataset, y_resampled = racog.fit_resample(original_dataset, y)
+        resampled_dataset = pd.DataFrame(resampled_dataset)
 
         # restore column titles if available
         if hasattr(X, 'columns'):
@@ -374,12 +408,29 @@ class UnlabeledRACOGSampler(Sampler):
     lag : int, default=20
         Number of iterations between new generated example for a minority one.
 
+    discretization : 'caim' or 'mdlp', default='caim'
+        Method for discretization of continuous variables.
+
+    continuous_distribution : 'normal' or 'laplace', default='normal'
+        The distribution used for sampling (reconstruct) continuous variables
+        after oversampling.
+
+    n_jobs : int, default=1
+        The number of jobs to run in parallel for sampling.
+
+    verbose : int, default=0
+        If greater than 0, enable verbose output.
+
+    random_state : int, RandomState instance or None, default=None
+        If int, 'random_state' is the seed used by the random number
+        generator; If 'RandomState' instance, random_state is the random
+        number generator; If 'None', the random number generator is the
+        'RandomState' instance used by 'np.random'.
+
     References
     ----------
 
-    .. [1] https://rdrr.io/cran/imbalance/man/racog.html
-
-    .. [2] B. Das, N. C. Krishnan and D. J. Cook, "RACOG and wRACOG: Two
+    .. [1] B. Das, N. C. Krishnan and D. J. Cook, "RACOG and wRACOG: Two
            Probabilistic Oversampling Techniques," in IEEE Transactions on
            Knowledge and Data Engineering, vol. 27, no. 1, pp. 222-234,
            1 Jan. 2015, doi: 10.1109/TKDE.2014.2324567.
@@ -390,11 +441,21 @@ class UnlabeledRACOGSampler(Sampler):
             self,
             sample_multiplication_factor,
             burnin=100,
-            lag=20
+            lag=20,
+            discretization='caim',
+            continuous_distribution='normal',
+            n_jobs=1,
+            verbose=0,
+            random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
         self.burnin = burnin
         self.lag = lag
+        self.discretization = discretization
+        self.continuous_distribution = continuous_distribution
+        self.n_jobs = n_jobs
+        self.verbose = verbose
+        self.random_state = random_state
 
     def fit(self, X, y=None):
         return self
@@ -403,8 +464,9 @@ class UnlabeledRACOGSampler(Sampler):
         """
         No labels available, so we view the entire set as belonging to one class
         and use RACOG on the entire dataset. Because RACOG requires there to be
-        a target vector, we add a dummy label vector that assigns each sample
-        to the same class. Returns only the generated data.
+        at least two classes, we add a dummy label vector and one dummy data
+        entry that is ignored in the resampling process. Returns only the
+        generated data.
         """
         # return an empty dataframe if the sample multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
@@ -416,19 +478,39 @@ class UnlabeledRACOGSampler(Sampler):
 
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
 
-        # adding target column that only consists of one class
-        target_column_title = str(len(original_dataset.columns))
-        original_dataset[target_column_title] = np.full((len(X), 1), 1)
+        # create a dummy target vector [ 0 1 ... 1 ]
+        y_dummy = np.append(0, np.full((len(original_dataset), 1), 1))
 
-        resampled_dataset = RACOG(burnin=self.burnin, lag=self.lag).resample(
-            dataset=original_dataset,
-            num_instances=int(self.sample_multiplication_factor * len(original_dataset)),
-            class_attr=target_column_title
+        # set sampling strategy to ignore the dummy class and resample the rest
+        sampling_strategy = {
+            0: 1,
+            1: int((self.sample_multiplication_factor + 1) * len(original_dataset))
+        }
+
+        # insert a dummy entry on index 0
+        dummy_dataset = pd.DataFrame(original_dataset).copy()
+        dummy_dataset.loc[-1] = [0] * len(dummy_dataset.columns)
+        dummy_dataset.index = dummy_dataset.index + 1
+        dummy_dataset.sort_index(inplace=True)
+
+        racog = RACOG(
+            sampling_strategy=sampling_strategy,
+            burnin=self.burnin,
+            lag=self.lag,
+            discretization=self.discretization,
+            continuous_distribution=self.continuous_distribution,
+            n_jobs=self.n_jobs,
+            verbose=self.verbose,
+            random_state=self.random_state,
+            categorical_features='all',
+            only_sampled=True
         )
 
-        # drop the target column
-        resampled_dataset = pd.DataFrame(resampled_dataset).reset_index(drop=True)
-        resampled_dataset = resampled_dataset.drop(columns=[target_column_title])
+        # filter user warning that fires because we do not use RACOG simply for balancing the dataset
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            resampled_dataset, _ = racog.fit_resample(dummy_dataset, y_dummy)
+        resampled_dataset = pd.DataFrame(resampled_dataset)
 
         # restore column titles if available
         if hasattr(X, 'columns'):
