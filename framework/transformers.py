@@ -3,8 +3,10 @@
 
 # Authors: Thomas Frank <thomas-frank01@gmx.de>
 # License: MIT
+
+import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import TransformerMixin
 
 
 class Labeler(TransformerMixin):
@@ -70,6 +72,36 @@ class TargetExtractor(TransformerMixin):
         y.name = original_target_column
 
         return X, y
+
+
+class NumericalTargetDiscretizer(TransformerMixin):
+    """
+    Discretize potentially continuous numerical targets according to the
+    discrete targets submitted in the constructor. Each continuous target entry
+    is mapped to its closest discrete target value. If a continuous entry is
+    exactly between two discrete values it is mapped to the bigger one.
+    """
+
+    def __init__(self, y):
+        # get unique targets in descending order
+        self._discrete_targets = np.flip(np.unique(y), axis=0)
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y):
+        discretized_y = []
+        for entry in y:
+            index = np.abs(self._discrete_targets - entry).argmin()
+            discretized_y.append(self._discrete_targets[index])
+
+        return X, discretized_y
+
+    def fit_transform(self, X, y=None, **fit_params):
+        if y is None:
+            return self.fit(X, **fit_params).transform(X)
+        else:
+            return self.fit(X, y, **fit_params).transform(X, y)
 
 
 class DatasetCombiner(TransformerMixin):

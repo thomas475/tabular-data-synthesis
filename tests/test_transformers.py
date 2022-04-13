@@ -31,3 +31,10 @@ print(combined_X)
 combined_X, combined_y = combiner.fit_transform(X=X_2, y=y_2)
 print(combined_X)
 print(combined_y)
+
+X = [1, 2, 3, 4, 5]
+y = [0, 1, 1, 0, 1]
+continuous_y = [0.1, 1.3, 0.8, 0.4, 0.5]
+discretizer = NumericalTargetDiscretizer(y)
+print(discretizer.fit_transform(X, continuous_y))
+print(discretizer.fit_transform(X, y))
