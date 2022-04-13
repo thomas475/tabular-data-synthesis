@@ -37,7 +37,14 @@ class TargetInjector(TransformerMixin):
         return self
 
     def transform(self, X, y):
-        return pd.concat([pd.DataFrame(X).copy(), pd.Series(y).copy()], axis=1, sort=False)
+        return pd.concat(
+            [
+                pd.DataFrame(X).copy().reset_index(drop=True),
+                pd.Series(y).copy().reset_index(drop=True)
+            ],
+            axis=1,
+            sort=False
+        )
 
     def fit_transform(self, X, y=None, **fit_params):
         if y is None:

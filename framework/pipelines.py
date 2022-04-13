@@ -341,7 +341,7 @@ class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
         )
 
 
-class GeneratorLabeledAugmentedStudentPipeline:
+class IndirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
     def __init__(
             self,
             imputer,
@@ -350,6 +350,7 @@ class GeneratorLabeledAugmentedStudentPipeline:
             injector,
             sampler,
             extractor,
+            discretizer,
             combiner,
             student,
             search_spaces,
@@ -369,6 +370,7 @@ class GeneratorLabeledAugmentedStudentPipeline:
                 ('injector', injector),
                 ('sampler', sampler),
                 ('extractor', extractor),
+                ('discretizer', discretizer),
                 ('combiner', combiner),
                 ('student', student)
             ],
@@ -376,6 +378,53 @@ class GeneratorLabeledAugmentedStudentPipeline:
                 'injector',
                 'sampler',
                 'extractor',
+                'discretizer',
+                'combiner'
+            ]
+        )
+
+        super().__init__(
+            pipeline=pipeline,
+            search_spaces=search_spaces,
+            n_jobs=n_jobs,
+            n_iter=n_iter,
+            n_points=n_points,
+            cv=cv,
+            scoring=scoring,
+            verbose=verbose,
+            random_state=random_state
+        )
+
+
+class DirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
+    def __init__(
+            self,
+            imputer,
+            scaler,
+            encoder,
+            sampler,
+            combiner,
+            student,
+            search_spaces,
+            scoring,
+            n_iter=50,
+            n_points=1,
+            cv=10,
+            n_jobs=-1,
+            verbose=10,
+            random_state=None
+    ):
+        pipeline = CustomPipeline(
+            steps=[
+                ('imputer', imputer),
+                ('encoder', encoder),
+                ('scaler', scaler),
+                ('sampler', sampler),
+                ('combiner', combiner),
+                ('student', student)
+            ],
+            predict_ignored_steps=[
+                'sampler',
                 'combiner'
             ]
         )
