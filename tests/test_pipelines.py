@@ -117,8 +117,8 @@ def run_pipeline_test():
 
     # =========================================================================== #
 
-    X = X.head(2000)
-    y = y.head(2000)
+    # X = X.head(2000)
+    # y = y.head(2000)
 
     from sklearn.model_selection import train_test_split
 
@@ -130,8 +130,8 @@ def run_pipeline_test():
     student_model = DecisionTreeClassifier
     student_type = 'decision_tree_classifier'
 
-    n_iter = 4
-    cv = 2
+    n_iter = 20
+    cv = 5
     n_jobs = 1
     n_points = 2
     scorer = 'roc_auc'
@@ -186,14 +186,14 @@ def run_pipeline_test():
     for name, sampler_type, sampler in [
         ('prop_smote', 'smote', ProportionalSMOTESampler),
         ('unlb_smote', 'smote', UnlabeledSMOTESampler),
-        ('prop_racog', 'racog', ProportionalRACOGSampler),
-        ('unlb_racog', 'racog', UnlabeledRACOGSampler),
-        ('prop_gan', 'vanilla_gan', ProportionalVanillaGANSampler),
-        ('unlb_gan', 'vanilla_gan', UnlabeledVanillaGANSampler),
-        ('prop_cgan', 'conditional_gan', ProportionalConditionalGANSampler),
-        ('unlb_cgan', 'conditional_gan', UnlabeledConditionalGANSampler),
-        ('prop_dragan', 'dragan', ProportionalDRAGANSampler),
-        ('unlb_dragan', 'dragan', UnlabeledDRAGANSampler)
+        # ('prop_racog', 'racog', ProportionalRACOGSampler),
+        # ('unlb_racog', 'racog', UnlabeledRACOGSampler),
+        # ('prop_gan', 'vanilla_gan', ProportionalVanillaGANSampler),
+        # ('unlb_gan', 'vanilla_gan', UnlabeledVanillaGANSampler),
+        # ('prop_cgan', 'conditional_gan', ProportionalConditionalGANSampler),
+        # ('unlb_cgan', 'conditional_gan', UnlabeledConditionalGANSampler),
+        # ('prop_dragan', 'dragan', ProportionalDRAGANSampler),
+        # ('unlb_dragan', 'dragan', UnlabeledDRAGANSampler)
     ]:
         student = TeacherLabeledAugmentedStudentPipeline(
             imputer=imputer,

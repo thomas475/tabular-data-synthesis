@@ -188,6 +188,7 @@ def pipeline_test():
 
         print(pipeline.fit_transform(X=X.copy(), y=y.copy()))
 
+
 def cgan_test_1():
     iris = datasets.load_iris()
     X = pd.DataFrame(iris['data'])
@@ -199,6 +200,7 @@ def cgan_test_1():
 
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(augmented_dataset)
+
 
 def cgan_test_2():
     iris = datasets.load_iris()
@@ -212,7 +214,8 @@ def cgan_test_2():
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(augmented_dataset)
 
-def dragan_test_1():
+
+def dragan_test_2():
     iris = datasets.load_iris()
     X = pd.DataFrame(iris['data'])
     X.columns = iris['feature_names']
@@ -224,7 +227,8 @@ def dragan_test_1():
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
         print(augmented_dataset)
 
-def dragan_test_2():
+
+def dragan_test_1():
     iris = datasets.load_iris()
     X = pd.DataFrame(iris['data'])
     X.columns = iris['feature_names']
@@ -237,14 +241,15 @@ def dragan_test_2():
         print(augmented_dataset)
 
 
-# proportional_smote()
-# unlabeled_smote()
-# proportional_racog()
-# unlabeled_racog()
-# vanilla_gan_test_1()
-# vanilla_gan_test_2()
-# pipeline_test()
-# cgan_test_1()
-# cgan_test_2()
-# dragan_test_1()
-# dragan_test_2()
+if __name__ == '__main__':
+    proportional_smote()
+    unlabeled_smote()
+    proportional_racog()
+    unlabeled_racog()
+    vanilla_gan_test_1()
+    vanilla_gan_test_2()
+    pipeline_test()
+    cgan_test_1()
+    cgan_test_2()
+    dragan_test_1()
+    dragan_test_2()
