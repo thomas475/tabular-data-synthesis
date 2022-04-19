@@ -4,6 +4,8 @@ from sklearn.tree import DecisionTreeClassifier
 import category_encoders as ce
 from skopt.space import Real, Categorical, Integer
 
+import os
+
 from framework.scheduler import Scheduler
 from framework.imputers import MostFrequentImputer
 from framework.transformers import *
@@ -159,19 +161,25 @@ n_jobs = 1
 verbose = 100
 random_state = 42
 
+experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
+experiment_base_title = 'base'
+
+
 def load_datasets():
     datasets = []
 
+    # =========================================================================== #
+
     # load adult dataset
-    adult = pd.read_csv('data/adult.csv')
+    dataset = pd.read_csv('data/adult.csv')
 
     # preprocess dataset
-    X = adult.drop(columns='income')
+    X = dataset.drop(columns='income')
     X = X.replace({'?': np.nan})
     X.columns = range(0, len(X.columns))
 
     # preprocess target
-    y = adult['income'].map({'<=50K': 0, '>50K': 1})
+    y = dataset['income'].map({'<=50K': 0, '>50K': 1})
     y.name = len(X.columns)
 
     # choose desired number of samples used from this dataset
@@ -188,10 +196,123 @@ def load_datasets():
 
     datasets.append(('adult', X, y, train_size, test_size))
 
+    # =========================================================================== #
+
+    # load credit dataset
+    dataset = pd.read_csv('data/credit.csv')
+
+    # preprocess dataset
+    X = dataset.drop(columns='target')
+    X.columns = range(0, len(X.columns))
+
+    # preprocess target
+    y = dataset['target'].map({True: 0, False: 1})
+    y.name = len(X.columns)
+
+    # choose desired number of samples used from this dataset
+    selected_n_samples = len(X)
+    total_n_samples = min(selected_n_samples, len(X))
+
+    # set number of samples, train size and test size so that they are divisible by cv
+    train_size = int(((total_n_samples * train_ratio) // cv) * cv)
+    test_size = int(((total_n_samples * (1 - train_ratio)) // cv) * cv)
+    total_n_samples = train_size + test_size
+
+    X = X.head(total_n_samples)
+    y = y.head(total_n_samples)
+
+    datasets.append(('credit', X, y, train_size, test_size))
+
+    # =========================================================================== #
+
+    # load promotion dataset
+    dataset = pd.read_csv('data/promotion.csv')
+
+    # preprocess dataset
+    X = dataset.drop(columns='target')
+    X.columns = range(0, len(X.columns))
+
+    # preprocess target
+    y = dataset['target'].map({True: 0, False: 1})
+    y.name = len(X.columns)
+
+    # choose desired number of samples used from this dataset
+    selected_n_samples = len(X)
+    total_n_samples = min(selected_n_samples, len(X))
+
+    # set number of samples, train size and test size so that they are divisible by cv
+    train_size = int(((total_n_samples * train_ratio) // cv) * cv)
+    test_size = int(((total_n_samples * (1 - train_ratio)) // cv) * cv)
+    total_n_samples = train_size + test_size
+
+    X = X.head(total_n_samples)
+    y = y.head(total_n_samples)
+
+    datasets.append(('promotion', X, y, train_size, test_size))
+
+    # =========================================================================== #
+
+    # load telecom dataset
+    dataset = pd.read_csv('data/telecom.csv')
+
+    # preprocess dataset
+    X = dataset.drop(columns='target')
+    X.columns = range(0, len(X.columns))
+
+    # preprocess target
+    y = dataset['target'].map({True: 0, False: 1})
+    y.name = len(X.columns)
+
+    # choose desired number of samples used from this dataset
+    selected_n_samples = len(X)
+    total_n_samples = min(selected_n_samples, len(X))
+
+    # set number of samples, train size and test size so that they are divisible by cv
+    train_size = int(((total_n_samples * train_ratio) // cv) * cv)
+    test_size = int(((total_n_samples * (1 - train_ratio)) // cv) * cv)
+    total_n_samples = train_size + test_size
+
+    X = X.head(total_n_samples)
+    y = y.head(total_n_samples)
+
+    datasets.append(('telecom', X, y, train_size, test_size))
+
+    # =========================================================================== #
+
+    # load kaggle_cat_dat_2 dataset
+    dataset = pd.read_csv('data/kaggle_cat_dat_2.csv')
+
+    # preprocess dataset
+    X = dataset.drop(columns='target')
+    X.columns = range(0, len(X.columns))
+
+    # preprocess target
+    y = dataset['target'].map({True: 0, False: 1})
+    y.name = len(X.columns)
+
+    # choose desired number of samples used from this dataset
+    selected_n_samples = len(X)
+    total_n_samples = min(selected_n_samples, len(X))
+
+    # set number of samples, train size and test size so that they are divisible by cv
+    train_size = int(((total_n_samples * train_ratio) // cv) * cv)
+    test_size = int(((total_n_samples * (1 - train_ratio)) // cv) * cv)
+    total_n_samples = train_size + test_size
+
+    X = X.head(total_n_samples)
+    y = y.head(total_n_samples)
+
+    datasets.append(('kaggle_cat_dat_2', X, y, train_size, test_size))
+
+    # =========================================================================== #
+
     return datasets
+
 
 def explore():
     scheduler = Scheduler(
+        experiment_directory=experiment_directory,
+        experiment_base_title=experiment_base_title,
         pipelines=pipelines,
         sample_multiplication_factors=sample_multiplication_factors,
         datasets=load_datasets(),
@@ -208,7 +329,6 @@ def explore():
         metrics=metrics,
         n_iter=n_iter,
         n_points=n_points,
-        train_ratio=train_ratio,
         cv=cv,
         n_jobs=n_jobs,
         verbose=verbose,

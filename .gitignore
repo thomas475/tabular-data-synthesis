@@ -2,6 +2,7 @@
 .idea
 framework/__pycache__
 cache
+data
 experiments/cache
 experiments/runs
 tests/cache
