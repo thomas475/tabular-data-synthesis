@@ -2,11 +2,13 @@ caimcaim==0.3
 category_encoders==2.4.0
 imbalanced_learn==0.9.0
 imblearn==0.0
+joblib==0.17.0
 mdlp==0.32
 numpy==1.22.3
 pandas==1.2.5
 pomegranate==0.14.0
 scikit_learn==1.0.2
 scikit_optimize==0.9.0
+tensorflow==2.4.4
 tqdm==4.63.1
 ydata_synthetic==0.6.1

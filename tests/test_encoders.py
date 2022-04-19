@@ -7,26 +7,31 @@ from sklearn import tree
 import category_encoders as ce
 import framework.encoders as enc
 
+def print_frame(X, y):
+    frame = pd.DataFrame(X).copy().reset_index(drop=True)
+    frame['target'] = pd.Series(y).copy().reset_index(drop=True)
+    print(frame)
+
 encoders = [
-    ce.BackwardDifferenceEncoder(),
-    ce.BaseNEncoder(),
-    ce.BinaryEncoder(),
-    ce.CatBoostEncoder(),
-    ce.CountEncoder(),
-    ce.GLMMEncoder(),
-    #ce.HashingEncoder(),
-    ce.HelmertEncoder(),
-    ce.JamesSteinEncoder(),
-    ce.LeaveOneOutEncoder(),
-    ce.MEstimateEncoder(),
-    ce.OneHotEncoder(),
-    ce.OrdinalEncoder(),
-    ce.SumEncoder(),
-    ce.PolynomialEncoder(),
-    ce.TargetEncoder(),
-    ce.WOEEncoder(),
-    ce.QuantileEncoder(),
-    enc.TargetEncoder(),
+    # ce.BackwardDifferenceEncoder(),
+    # ce.BaseNEncoder(),
+    # ce.BinaryEncoder(),
+    # ce.CatBoostEncoder(),
+    # ce.CountEncoder(),
+    # ce.GLMMEncoder(),
+    # ce.HashingEncoder(),
+    # ce.HelmertEncoder(),
+    # ce.JamesSteinEncoder(),
+    # ce.LeaveOneOutEncoder(),
+    # ce.MEstimateEncoder(),
+    # ce.OneHotEncoder(),
+    # ce.OrdinalEncoder(),
+    # ce.SumEncoder(),
+    # ce.PolynomialEncoder(),
+    # ce.TargetEncoder(),
+    # ce.WOEEncoder(),
+    # ce.QuantileEncoder(),
+    # enc.TargetEncoder(),
     enc.CollapseEncoder()
 ]
 
@@ -40,6 +45,7 @@ end = start + 5
 X = X.loc[start:end - 1, :]
 y = y[start:end]
 
+print_frame(X, y)
 for encoder in encoders:
     print(encoder)
-    print(encoder.fit_transform(X, y))
+    print_frame(encoder.fit_transform(X, y), y)

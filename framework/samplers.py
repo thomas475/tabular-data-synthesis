@@ -21,19 +21,30 @@ import tensorflow as tf
 import random
 
 
-class Sampler(BaseEstimator, TransformerMixin):
+class ProportionalSampler(BaseEstimator, TransformerMixin):
     """
-    Dummy class that allows us to modify only the methods that interest us,
-    avoiding redundancy.
+    Proportional sampler base class. Requires the target value in each step.
     """
 
-    def __init__(self):
-        return None
-
-    def fit(self, X=None, y=None):
+    def fit(self, X, y):
         return self
 
-    def transform(self, X=None, y=None):
+    def transform(self, X, y):
+        return self
+
+    def fit_transform(self, X, y, **fit_params):
+        return self.fit(X, y, **fit_params).transform(X, y)
+
+
+class UnlabeledSampler(BaseEstimator, TransformerMixin):
+    """
+    Unlabeled sampler base class. Doesn't require the target.
+    """
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
         return self
 
     def fit_transform(self, X, y=None, **fit_params):
@@ -43,7 +54,7 @@ class Sampler(BaseEstimator, TransformerMixin):
             return self.fit(X, y, **fit_params).transform(X, y)
 
 
-class ProportionalSMOTESampler(Sampler):
+class ProportionalSMOTESampler(ProportionalSampler):
     """
     Transformer that implements a proportional SMOTE sampling routine.
     SMOTE is usually used for oversampling in imbalanced datasets, but this
@@ -57,6 +68,10 @@ class ProportionalSMOTESampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     random_state : int, default=None
         Control the randomization of the algorithm.
@@ -85,11 +100,13 @@ class ProportionalSMOTESampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             random_state=None,
             k_neighbors=5,
             n_jobs=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.random_state = random_state
         self.k_neighbors = k_neighbors
         self.n_jobs = n_jobs
@@ -100,11 +117,13 @@ class ProportionalSMOTESampler(Sampler):
     def transform(self, X, y):
         """
         Count number of occurrences of each class and resample proportionally.
-        Returns only the generated data and its targets.
         """
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -140,11 +159,12 @@ class ProportionalSMOTESampler(Sampler):
         resampled_dataset = pd.DataFrame(resampled_dataset)
         resampled_target = pd.Series(resampled_target)
 
-        # remove original dataset
-        resampled_dataset = pd.DataFrame(resampled_dataset.iloc[len(X):, :])
-        resampled_dataset = resampled_dataset.reset_index(drop=True)
-        resampled_target = pd.Series(resampled_target.iloc[len(X):])
-        resampled_target = resampled_target.reset_index(drop=True)
+        if self.only_sampled:
+            # remove original dataset
+            resampled_dataset = pd.DataFrame(resampled_dataset.iloc[len(X):, :])
+            resampled_dataset = resampled_dataset.reset_index(drop=True)
+            resampled_target = pd.Series(resampled_target.iloc[len(X):])
+            resampled_target = resampled_target.reset_index(drop=True)
 
         # restore column titles if available
         if hasattr(X, 'columns'):
@@ -155,7 +175,7 @@ class ProportionalSMOTESampler(Sampler):
         return resampled_dataset, resampled_target
 
 
-class UnlabeledSMOTESampler(Sampler):
+class UnlabeledSMOTESampler(UnlabeledSampler):
     """
     Transformer that implements a SMOTE sampling routine for unlabeled data.
     SMOTE is usually used for oversampling in imbalanced datasets, but this
@@ -168,6 +188,10 @@ class UnlabeledSMOTESampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     random_state : int, default=None
         Control the randomization of the algorithm.
@@ -196,11 +220,13 @@ class UnlabeledSMOTESampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             random_state=None,
             k_neighbors=5,
             n_jobs=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.random_state = random_state
         self.k_neighbors = k_neighbors
         self.n_jobs = n_jobs
@@ -213,12 +239,14 @@ class UnlabeledSMOTESampler(Sampler):
         No labels available, so we view the entire set as belonging to one class
         and use SMOTE on the entire dataset. Because SMOTE requires there to be
         at least two classes, we add a dummy label vector and one dummy data
-        entry. After we run SMOTE, we remove the dummy entry. Returns only the
-        generated data.
+        entry. After we run SMOTE, we remove the dummy entry.
         """
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -257,18 +285,28 @@ class UnlabeledSMOTESampler(Sampler):
         # remove the dummy entry
         resampled_dataset = resampled_dummy_dataset.iloc[1:, :].reset_index(drop=True)
 
-        # remove original dataset
-        resampled_dataset = pd.DataFrame(resampled_dataset.iloc[len(X):, :])
-        resampled_dataset = resampled_dataset.reset_index(drop=True)
+        if self.only_sampled:
+            # remove original dataset
+            resampled_dataset = pd.DataFrame(resampled_dataset.iloc[len(X):, :])
+            resampled_dataset = resampled_dataset.reset_index(drop=True)
+            resampled_target = None
+        else:
+            resampled_target = pd.concat([
+                pd.Series(y).copy().reset_index(drop=True),
+                pd.Series(
+                    np.full(int(self.sample_multiplication_factor * len(X)), np.nan)
+                ).copy().reset_index(drop=True)
+            ], ignore_index=True)
+            resampled_target = pd.Series(resampled_target).reset_index(drop=True)
 
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset, None
+        return resampled_dataset, resampled_target
 
 
-class ProportionalRACOGSampler(Sampler):
+class ProportionalRACOGSampler(ProportionalSampler):
     """
     Transformer that implements a proportional RACOG sampling routine. RACOG is
     a Gibbs sampling routine used for oversampling in imbalanced datasets, but
@@ -282,6 +320,10 @@ class ProportionalRACOGSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     burnin : int, default=100
         It determines how many examples generated for a given one are going to
@@ -322,6 +364,7 @@ class ProportionalRACOGSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             burnin=100,
             lag=20,
             discretization='caim',
@@ -331,6 +374,7 @@ class ProportionalRACOGSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.burnin = burnin
         self.lag = lag
         self.discretization = discretization
@@ -345,11 +389,13 @@ class ProportionalRACOGSampler(Sampler):
     def transform(self, X, y):
         """
         Count number of occurrences of each class and resample proportionally.
-        Returns only the generated data and its targets.
         """
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -381,7 +427,7 @@ class ProportionalRACOGSampler(Sampler):
             verbose=self.verbose,
             random_state=self.random_state,
             categorical_features='all',
-            only_sampled=True
+            only_sampled=self.only_sampled
         )
 
         # filter user warning that fires because we do not use RACOG simply for balancing the dataset
@@ -400,7 +446,7 @@ class ProportionalRACOGSampler(Sampler):
         return resampled_dataset, resampled_target
 
 
-class UnlabeledRACOGSampler(Sampler):
+class UnlabeledRACOGSampler(UnlabeledSampler):
     """
     Transformer that implements a RACOG sampling routine for unlabeled data.
     RACOG is a Gibbs sampling routine used for oversampling in imbalanced
@@ -414,6 +460,10 @@ class UnlabeledRACOGSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     burnin : int, default=100
         It determines how many examples generated for a given one are going to
@@ -454,6 +504,7 @@ class UnlabeledRACOGSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             burnin=100,
             lag=20,
             discretization='caim',
@@ -463,6 +514,7 @@ class UnlabeledRACOGSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.burnin = burnin
         self.lag = lag
         self.discretization = discretization
@@ -479,12 +531,14 @@ class UnlabeledRACOGSampler(Sampler):
         No labels available, so we view the entire set as belonging to one class
         and use RACOG on the entire dataset. Because RACOG requires there to be
         at least two classes, we add a dummy label vector and one dummy data
-        entry that is ignored in the resampling process. Returns only the
-        generated data.
+        entry that is ignored in the resampling process.
         """
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -517,7 +571,7 @@ class UnlabeledRACOGSampler(Sampler):
             verbose=self.verbose,
             random_state=self.random_state,
             categorical_features='all',
-            only_sampled=True
+            only_sampled=self.only_sampled
         )
 
         # filter user warning that fires because we do not use RACOG simply for balancing the dataset
@@ -526,14 +580,28 @@ class UnlabeledRACOGSampler(Sampler):
             resampled_dataset, _ = racog.fit_resample(dummy_dataset, y_dummy)
         resampled_dataset = pd.DataFrame(resampled_dataset)
 
+        # remove the dummy entry
+        resampled_dataset = resampled_dataset.iloc[1:, :].reset_index(drop=True)
+
+        if self.only_sampled:
+            resampled_target = None
+        else:
+            resampled_target = pd.concat([
+                pd.Series(y).copy().reset_index(drop=True),
+                pd.Series(
+                    np.full(int(self.sample_multiplication_factor * len(X)), np.nan)
+                ).copy().reset_index(drop=True)
+            ], ignore_index=True)
+            resampled_target = pd.Series(resampled_target).reset_index(drop=True)
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset, None
+        return resampled_dataset, resampled_target
 
 
-class ProportionalVanillaGANSampler(Sampler):
+class ProportionalVanillaGANSampler(ProportionalSampler):
     """
     Transformer that implements a proportional sampling routine using a vanilla
     GAN implementation. We train and sample from a different vanilla GAN model
@@ -546,6 +614,10 @@ class ProportionalVanillaGANSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     batch_size: int, default=128
         Number of samples used per training step.
@@ -582,6 +654,7 @@ class ProportionalVanillaGANSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             batch_size=128,
             learning_rate=1e-4,
             betas=(0.5, 0.9),
@@ -592,6 +665,7 @@ class ProportionalVanillaGANSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.betas = betas
@@ -601,7 +675,7 @@ class ProportionalVanillaGANSampler(Sampler):
         self.sample_interval = sample_interval
         self.random_state = random_state
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
         _set_global_random_state(self.random_state)
 
         # reset vanilla gan models
@@ -643,17 +717,19 @@ class ProportionalVanillaGANSampler(Sampler):
 
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X, y):
         """
         Sample proportionally from each of the vanilla GANs trained on the
-        subsets split by class. Returns only the generated data and its
-        targets.
+        subsets split by class.
         """
         _set_global_random_state(self.random_state)
 
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -661,6 +737,7 @@ class ProportionalVanillaGANSampler(Sampler):
         if hasattr(y, 'name'):
             original_target_title = y.name
 
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_target = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
@@ -692,6 +769,18 @@ class ProportionalVanillaGANSampler(Sampler):
         resampled_target = pd.concat(resampled_targets_per_class, ignore_index=True)
         resampled_target = resampled_target.reset_index(drop=True)
 
+        if not self.only_sampled:
+            # add original samples and target
+            original_dataset.columns = range(len(original_dataset.columns))
+            original_target.name = len(original_dataset.columns)
+            resampled_dataset.columns = range(len(resampled_dataset.columns))
+            resampled_target.name = len(resampled_dataset.columns)
+
+            resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+            resampled_dataset.reset_index(drop=True)
+            resampled_target = pd.concat([original_target, resampled_target], ignore_index=True)
+            resampled_target.reset_index(drop=True)
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
@@ -701,7 +790,7 @@ class ProportionalVanillaGANSampler(Sampler):
         return resampled_dataset, resampled_target
 
 
-class UnlabeledVanillaGANSampler(Sampler):
+class UnlabeledVanillaGANSampler(UnlabeledSampler):
     """
     Transformer that implements a sampling routine for a trained vanilla GAN
     model on unlabeled data.
@@ -713,6 +802,10 @@ class UnlabeledVanillaGANSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     batch_size: int, default=128
         Number of samples used per training step.
@@ -749,6 +842,7 @@ class UnlabeledVanillaGANSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             batch_size=128,
             learning_rate=1e-4,
             betas=(0.5, 0.9),
@@ -759,6 +853,7 @@ class UnlabeledVanillaGANSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.betas = betas
@@ -798,13 +893,16 @@ class UnlabeledVanillaGANSampler(Sampler):
 
     def transform(self, X, y=None):
         """
-        Returns only the generated data.
+        Runs a vanilla GAN sampling routine trained on the entire dataset.
         """
         _set_global_random_state(self.random_state)
 
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -824,14 +922,32 @@ class UnlabeledVanillaGANSampler(Sampler):
         )
         resampled_dataset = resampled_dataset.reset_index(drop=True)
 
+        if not self.only_sampled:
+            # add original samples
+            original_dataset.columns = range(len(original_dataset.columns))
+            resampled_dataset.columns = range(len(resampled_dataset.columns))
+
+            resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+            resampled_dataset.reset_index(drop=True)
+
+            resampled_target = pd.concat([
+                pd.Series(y).copy().reset_index(drop=True),
+                pd.Series(
+                    np.full(int(self.sample_multiplication_factor * len(X)), np.nan)
+                ).copy().reset_index(drop=True)
+            ], ignore_index=True)
+            resampled_target = pd.Series(resampled_target).reset_index(drop=True)
+        else:
+            resampled_dataset = None
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset, None
+        return resampled_dataset, resampled_target
 
 
-class ProportionalConditionalGANSampler(Sampler):
+class ProportionalConditionalGANSampler(ProportionalSampler):
     """
     Transformer that implements a proportional sampling routine using a
     conditional GAN implementation. For each class, we sample a proportional
@@ -844,6 +960,10 @@ class ProportionalConditionalGANSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     batch_size: int, default=128
         Number of samples used per training step.
@@ -880,6 +1000,7 @@ class ProportionalConditionalGANSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             batch_size=128,
             learning_rate=1e-4,
             betas=(0.5, 0.9),
@@ -890,6 +1011,7 @@ class ProportionalConditionalGANSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.betas = betas
@@ -899,7 +1021,7 @@ class ProportionalConditionalGANSampler(Sampler):
         self.sample_interval = sample_interval
         self.random_state = random_state
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
         _set_global_random_state(self.random_state)
 
         # set the number of classes
@@ -922,7 +1044,7 @@ class ProportionalConditionalGANSampler(Sampler):
         num_cols = original_dataset.columns.copy().tolist()
 
         # add the target column to the dataset
-        target_column_title = len(original_dataset.columns)
+        target_column_title = str(len(original_dataset.columns))
         original_dataset[target_column_title] = y
 
         self._cgan.train(
@@ -938,16 +1060,19 @@ class ProportionalConditionalGANSampler(Sampler):
 
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X, y):
         """
         Sample a proportional number of samples from the generated conditional
-        GAN model. Returns only the generated data and its targets.
+        GAN model.
         """
         _set_global_random_state(self.random_state)
 
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -955,6 +1080,7 @@ class ProportionalConditionalGANSampler(Sampler):
         if hasattr(y, 'name'):
             original_target_title = y.name
 
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_target = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
@@ -996,6 +1122,18 @@ class ProportionalConditionalGANSampler(Sampler):
         resampled_dataset = resampled_dataset.reset_index(drop=True)
         resampled_target = resampled_target.reset_index(drop=True)
 
+        if not self.only_sampled:
+            # add original samples and target
+            original_dataset.columns = range(len(original_dataset.columns))
+            original_target.name = len(original_dataset.columns)
+            resampled_dataset.columns = range(len(resampled_dataset.columns))
+            resampled_target.name = len(resampled_dataset.columns)
+
+            resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+            resampled_dataset.reset_index(drop=True)
+            resampled_target = pd.concat([original_target, resampled_target], ignore_index=True)
+            resampled_target.reset_index(drop=True)
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
@@ -1005,7 +1143,7 @@ class ProportionalConditionalGANSampler(Sampler):
         return resampled_dataset, resampled_target
 
 
-class UnlabeledConditionalGANSampler(Sampler):
+class UnlabeledConditionalGANSampler(UnlabeledSampler):
     """
     Transformer that implements an unlabeled sampling routine using a
     conditional GAN implementation where we set the target vector to be all one
@@ -1018,6 +1156,10 @@ class UnlabeledConditionalGANSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     batch_size: int, default=128
         Number of samples used per training step.
@@ -1054,6 +1196,7 @@ class UnlabeledConditionalGANSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             batch_size=128,
             learning_rate=1e-4,
             betas=(0.5, 0.9),
@@ -1064,6 +1207,7 @@ class UnlabeledConditionalGANSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.betas = betas
@@ -1112,17 +1256,22 @@ class UnlabeledConditionalGANSampler(Sampler):
     def transform(self, X, y=None):
         """
         Sample a proportional number of samples from the generated conditional
-        GAN model. Returns only the generated data.
+        GAN model.
         """
         _set_global_random_state(self.random_state)
 
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
 
         number_of_samples = int(self.sample_multiplication_factor * len(X))
         condition = np.array([0])
@@ -1140,14 +1289,32 @@ class UnlabeledConditionalGANSampler(Sampler):
         resampled_dataset = resampled_dataset.drop(columns=[len(resampled_dataset.columns) - 1])
         resampled_dataset = resampled_dataset.reset_index(drop=True)
 
+        if not self.only_sampled:
+            # add original samples
+            original_dataset.columns = range(len(original_dataset.columns))
+            resampled_dataset.columns = range(len(resampled_dataset.columns))
+
+            resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+            resampled_dataset.reset_index(drop=True)
+
+            resampled_target = pd.concat([
+                pd.Series(y).copy().reset_index(drop=True),
+                pd.Series(
+                    np.full(int(self.sample_multiplication_factor * len(X)), np.nan)
+                ).copy().reset_index(drop=True)
+            ], ignore_index=True)
+            resampled_target = pd.Series(resampled_target).reset_index(drop=True)
+        else:
+            resampled_dataset = None
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset, None
+        return resampled_dataset, resampled_target
 
 
-class ProportionalDRAGANSampler(Sampler):
+class ProportionalDRAGANSampler(ProportionalSampler):
     """
     Transformer that implements a proportional sampling routine using a DRAGAN
     implementation. We train and sample from a different DRAGAN model for each
@@ -1160,6 +1327,10 @@ class ProportionalDRAGANSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     discriminator_updates_per_step : int, default=1
         Determines how many times the discriminator is updated in each training
@@ -1200,6 +1371,7 @@ class ProportionalDRAGANSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             discriminator_updates_per_step=1,
             batch_size=128,
             learning_rate=1e-4,
@@ -1211,6 +1383,7 @@ class ProportionalDRAGANSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.discriminator_updates_per_step = discriminator_updates_per_step
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -1266,13 +1439,16 @@ class ProportionalDRAGANSampler(Sampler):
     def transform(self, X, y):
         """
         Sample proportionally from each of the DRAGANs trained on the subsets
-        split by class. Returns only the generated data and its targets.
+        split by class.
         """
         _set_global_random_state(self.random_state)
 
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
@@ -1280,6 +1456,7 @@ class ProportionalDRAGANSampler(Sampler):
         if hasattr(y, 'name'):
             original_target_title = y.name
 
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_target = pd.Series(y).copy().reset_index(drop=True)
 
         # calculate the number of occurrences per class
@@ -1311,6 +1488,18 @@ class ProportionalDRAGANSampler(Sampler):
         resampled_target = pd.concat(resampled_targets_per_class, ignore_index=True)
         resampled_target = resampled_target.reset_index(drop=True)
 
+        if not self.only_sampled:
+            # add original samples and target
+            original_dataset.columns = range(len(original_dataset.columns))
+            original_target.name = len(original_dataset.columns)
+            resampled_dataset.columns = range(len(resampled_dataset.columns))
+            resampled_target.name = len(resampled_dataset.columns)
+
+            resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+            resampled_dataset.reset_index(drop=True)
+            resampled_target = pd.concat([original_target, resampled_target], ignore_index=True)
+            resampled_target.reset_index(drop=True)
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
@@ -1320,7 +1509,7 @@ class ProportionalDRAGANSampler(Sampler):
         return resampled_dataset, resampled_target
 
 
-class UnlabeledDRAGANSampler(Sampler):
+class UnlabeledDRAGANSampler(UnlabeledSampler):
     """
     Transformer that implements an unlabeled sampling routine using a DRAGAN
     implementation.
@@ -1332,6 +1521,10 @@ class UnlabeledDRAGANSampler(Sampler):
         Determines the relative amount of generated data, i.e. 0 means that no
         data is generated and 1 means that we generate the same number of data
         points as we already have.
+
+    only_sampled : bool, default=False
+        Determines whether the original dataset is prepended to the generated
+        samples.
 
     discriminator_updates_per_step : int, default=1
         Determines how many times the discriminator is updated in each training
@@ -1372,6 +1565,7 @@ class UnlabeledDRAGANSampler(Sampler):
     def __init__(
             self,
             sample_multiplication_factor,
+            only_sampled=False,
             discriminator_updates_per_step=1,
             batch_size=128,
             learning_rate=1e-4,
@@ -1383,6 +1577,7 @@ class UnlabeledDRAGANSampler(Sampler):
             random_state=None
     ):
         self.sample_multiplication_factor = sample_multiplication_factor
+        self.only_sampled = only_sampled
         self.discriminator_updates_per_step = discriminator_updates_per_step
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -1431,13 +1626,18 @@ class UnlabeledDRAGANSampler(Sampler):
         """
         _set_global_random_state(self.random_state)
 
-        # return an empty dataframe and target if the sample multiplication factor is too small
+        # return an empty dataframe and target or the original samples if the multiplication factor is too small
         if int(self.sample_multiplication_factor * len(X)) < 1:
-            return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            if self.only_sampled:
+                return pd.DataFrame(columns=pd.DataFrame(X).columns), pd.Series([])
+            else:
+                return X, y
 
         # store column titles to restore them after sampling if available
         if hasattr(X, 'columns'):
             original_column_titles = X.columns
+
+        original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
 
         number_of_samples = int(self.sample_multiplication_factor * len(X))
         resampled_dataset = self._dragan.sample(n_samples=number_of_samples)
@@ -1447,11 +1647,29 @@ class UnlabeledDRAGANSampler(Sampler):
         resampled_dataset = resampled_dataset.iloc[:number_of_samples, :]
         resampled_dataset = resampled_dataset.reset_index(drop=True)
 
+        if not self.only_sampled:
+            # add original samples
+            original_dataset.columns = range(len(original_dataset.columns))
+            resampled_dataset.columns = range(len(resampled_dataset.columns))
+
+            resampled_dataset = pd.concat([original_dataset, resampled_dataset], ignore_index=True)
+            resampled_dataset.reset_index(drop=True)
+
+            resampled_target = pd.concat([
+                pd.Series(y).copy().reset_index(drop=True),
+                pd.Series(
+                    np.full(int(self.sample_multiplication_factor * len(X)), np.nan)
+                ).copy().reset_index(drop=True)
+            ], ignore_index=True)
+            resampled_target = pd.Series(resampled_target).reset_index(drop=True)
+        else:
+            resampled_dataset = None
+
         # restore column titles if available
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
-        return resampled_dataset, None
+        return resampled_dataset, resampled_target
 
 
 def _convert_list_to_string_list(item_list):

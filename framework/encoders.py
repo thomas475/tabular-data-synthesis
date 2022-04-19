@@ -83,14 +83,17 @@ class CollapseEncoder(Encoder):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def transform(self, X: pd.DataFrame, y=None, **kwargs):
-        X = X.copy()
+    def transform(self, X, y=None, **kwargs):
+        X = pd.DataFrame(X).copy().reset_index(drop=True)
 
         # selecting categorical columns for processing
-        self.cols = list(X.select_dtypes(['object']).columns)
+        self.cols = X.infer_objects().select_dtypes(include=['object']).columns
 
         # drop all categorical columns and add a column instead with the value 1 everywhere
         X = X.drop(columns=self.cols)
-        X = pd.concat([X, pd.Series(np.ones(len(X)), index=X.index, name='cat')], axis=1)
+        X = pd.concat([X, pd.Series(np.ones(len(X)), index=X.index)], axis=1)
+        # X = pd.concat([X, pd.Series(np.ones(len(X)), index=X.index, name='categorical')], axis=1)
+
+        print(X)
 
         return X

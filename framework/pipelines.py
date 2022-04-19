@@ -242,7 +242,7 @@ class OptimalModelPipeline:
             scoring,
             n_iter=50,
             cv=10,
-            n_jobs=-1,
+            n_jobs=1,
             n_points=1,
             verbose=10,
             random_state=None
@@ -262,11 +262,18 @@ class OptimalModelPipeline:
     def fit(self, X, y):
         return self._optimal_model.fit(X, y)
 
+    def get_params(self):
+        return self._optimal_model.get_params()
+
     def predict(self, X):
         return self._optimal_model.predict(X)
 
     def score(self, X, y):
         return self._optimal_model.score(X, y)
+
+    def get_estimator(self):
+        last_step_name = list(self._optimal_model.best_estimator_.named_steps.keys())[-1]
+        return self._optimal_model.best_estimator_.named_steps[last_step_name]
 
 
 class PreprocessorPipeline:
@@ -300,13 +307,12 @@ class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
             encoder,
             sampler,
             teacher,
-            combiner,
             student,
             search_spaces,
             scoring,
             n_iter=50,
             cv=10,
-            n_jobs=-1,
+            n_jobs=1,
             n_points=1,
             verbose=10,
             random_state=None
@@ -318,13 +324,11 @@ class TeacherLabeledAugmentedStudentPipeline(OptimalModelPipeline):
                 ('scaler', scaler),
                 ('sampler', sampler),
                 ('teacher', teacher),
-                ('combiner', combiner),
                 ('student', student)
             ],
             predict_ignored_steps=[
                 'sampler',
                 'teacher',
-                'combiner'
             ]
         )
 
@@ -351,14 +355,13 @@ class IndirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
             sampler,
             extractor,
             discretizer,
-            combiner,
             student,
             search_spaces,
             scoring,
             n_iter=50,
             n_points=1,
             cv=10,
-            n_jobs=-1,
+            n_jobs=1,
             verbose=10,
             random_state=None
     ):
@@ -371,7 +374,6 @@ class IndirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
                 ('sampler', sampler),
                 ('extractor', extractor),
                 ('discretizer', discretizer),
-                ('combiner', combiner),
                 ('student', student)
             ],
             predict_ignored_steps=[
@@ -379,7 +381,6 @@ class IndirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
                 'sampler',
                 'extractor',
                 'discretizer',
-                'combiner'
             ]
         )
 
@@ -403,14 +404,13 @@ class DirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
             scaler,
             encoder,
             sampler,
-            combiner,
             student,
             search_spaces,
             scoring,
             n_iter=50,
             n_points=1,
             cv=10,
-            n_jobs=-1,
+            n_jobs=1,
             verbose=10,
             random_state=None
     ):
@@ -420,12 +420,10 @@ class DirectGeneratorLabeledAugmentedStudentPipeline(OptimalModelPipeline):
                 ('encoder', encoder),
                 ('scaler', scaler),
                 ('sampler', sampler),
-                ('combiner', combiner),
                 ('student', student)
             ],
             predict_ignored_steps=[
                 'sampler',
-                'combiner'
             ]
         )
 
@@ -454,7 +452,7 @@ class BaselineStudentPipeline(OptimalModelPipeline):
             n_iter=50,
             n_points=1,
             cv=10,
-            n_jobs=-1,
+            n_jobs=1,
             verbose=10,
             random_state=None
     ):
@@ -490,7 +488,7 @@ class TeacherPipeline(OptimalModelPipeline):
             n_iter=50,
             n_points=1,
             cv=10,
-            n_jobs=-1,
+            n_jobs=1,
             verbose=10,
             random_state=None
     ):
@@ -532,7 +530,7 @@ class RandomForestClassifierTeacherPipeline(TeacherPipeline):
             n_iter=25,
             n_points=1,
             cv=5,
-            n_jobs=-1,
+            n_jobs=1,
             verbose=10,
             random_state=None
     ):

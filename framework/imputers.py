@@ -4,13 +4,31 @@
 # License: MIT
 
 import pandas as pd
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import TransformerMixin
+
+
+class MostFrequentImputer(TransformerMixin):
+    """
+    Wrapper for sklearn.impute.SimpleImputer with the "most-frequent" strategy.
+    """
+
+    def __init__(self):
+        self._imputer = SimpleImputer(strategy='most_frequent')
+
+    def fit(self, X, y=None):
+        self._imputer.fit(X, y)
+        return self
+
+    def transform(self, X):
+        return self._imputer.transform(X)
 
 
 class DropImputer(TransformerMixin):
     """
     Imputer that drops rows containing np.NaN entries.
     """
+
     def __init__(self):
         super().__init__()
 

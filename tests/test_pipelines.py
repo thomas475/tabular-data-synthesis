@@ -125,8 +125,8 @@ def run_teacher_pipeline_test():
 
     # =========================================================================== #
 
-    X = X.head(2000)
-    y = y.head(2000)
+    # X = X.head(2000)
+    # y = y.head(2000)
 
     from sklearn.model_selection import train_test_split
 
@@ -134,19 +134,21 @@ def run_teacher_pipeline_test():
     encoder = ce.TargetEncoder()
     scaler = RobustScaler()
     labeler = Labeler
-    combiner = DatasetCombiner
     student_model = DecisionTreeClassifier
     student_type = 'decision_tree_classifier'
 
     n_iter = 1
     cv = 2
-    n_jobs = 1
+    n_jobs = -1
     n_points = 1
     scorer = 'roc_auc'
     verbose = 100
     random_state = 42
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
+    train_size = 1000
+    test_size = 1000
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, test_size=test_size, stratify=y, random_state=42)
 
     preprocessor = PreprocessorPipeline(
         imputer=imputer,
@@ -207,9 +209,8 @@ def run_teacher_pipeline_test():
             imputer=imputer,
             encoder=encoder,
             scaler=scaler,
-            sampler=sampler(sample_multiplication_factor=1, random_state=42),
-            teacher=labeler(trained_model=teacher),
-            combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
+            sampler=sampler(sample_multiplication_factor=1, only_sampled=False, random_state=42),
+            teacher=labeler(trained_model=teacher, ignored_first_n_samples=int(len(X_train) - (len(X_train) / cv))),
             student=student_model(),
             search_spaces={
                 **search_spaces[student_type],
@@ -258,8 +259,8 @@ def run_indirect_generator_pipeline_test():
 
     # =========================================================================== #
 
-    X = X.head(2000)
-    y = y.head(2000)
+    # X = X.head(2000)
+    # y = y.head(2000)
 
     from sklearn.model_selection import train_test_split
 
@@ -269,28 +270,21 @@ def run_indirect_generator_pipeline_test():
     injector = TargetInjector()
     extractor = TargetExtractor()
     discretizer = NumericalTargetDiscretizer
-    combiner = DatasetCombiner
     student_model = DecisionTreeClassifier
     student_type = 'decision_tree_classifier'
 
     n_iter = 1
     cv = 2
-    n_jobs = 1
+    n_jobs = -1
     n_points = 1
     scorer = 'roc_auc'
     verbose = 100
     random_state = 42
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
+    train_size = 1000
+    test_size = 1000
 
-    preprocessor = PreprocessorPipeline(
-        imputer=imputer,
-        encoder=encoder,
-        scaler=scaler,
-    )
-
-    X_train_preprocessed, y_train_preprocessed = preprocessor.fit_transform(X_train, y_train)
-    X_test_preprocessed, y_test_preprocessed = preprocessor.fit_transform(X_test, y_test)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, test_size=test_size, stratify=y, random_state=42)
 
     teacher = RandomForestClassifierTeacherPipeline(
         imputer=imputer,
@@ -340,8 +334,7 @@ def run_indirect_generator_pipeline_test():
             injector=injector,
             sampler=sampler(sample_multiplication_factor=1, random_state=42),
             extractor=extractor,
-            discretizer=discretizer(y=y_train_preprocessed),
-            combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
+            discretizer=discretizer(y=y_train),
             student=student_model(),
             search_spaces={
                 **search_spaces[student_type],
@@ -390,36 +383,29 @@ def run_direct_generator_pipeline_test():
 
     # =========================================================================== #
 
-    X = X.head(2000)
-    y = y.head(2000)
+    # X = X.head(2000)
+    # y = y.head(2000)
 
     from sklearn.model_selection import train_test_split
 
     imputer = SimpleImputer(strategy='most_frequent')
     encoder = ce.TargetEncoder()
     scaler = RobustScaler()
-    combiner = DatasetCombiner
     student_model = DecisionTreeClassifier
     student_type = 'decision_tree_classifier'
 
     n_iter = 1
     cv = 2
-    n_jobs = 1
+    n_jobs = -1
     n_points = 1
     scorer = 'roc_auc'
     verbose = 100
     random_state = 42
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.75, test_size=.25, random_state=42)
+    train_size = 1000
+    test_size = 1000
 
-    preprocessor = PreprocessorPipeline(
-        imputer=imputer,
-        encoder=encoder,
-        scaler=scaler,
-    )
-
-    X_train_preprocessed, y_train_preprocessed = preprocessor.fit_transform(X_train, y_train)
-    X_test_preprocessed, y_test_preprocessed = preprocessor.fit_transform(X_test, y_test)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, test_size=test_size, stratify=y, random_state=42)
 
     teacher = RandomForestClassifierTeacherPipeline(
         imputer=imputer,
@@ -467,7 +453,6 @@ def run_direct_generator_pipeline_test():
             encoder=encoder,
             scaler=scaler,
             sampler=sampler(sample_multiplication_factor=1, random_state=42),
-            combiner=combiner(X=X_train_preprocessed, y=y_train_preprocessed),
             student=student_model(),
             search_spaces={
                 **search_spaces[student_type],
@@ -498,6 +483,6 @@ def run_direct_generator_pipeline_test():
 
 
 if __name__ == '__main__':
-    run_teacher_pipeline_test()
+    # run_teacher_pipeline_test()
     run_indirect_generator_pipeline_test()
     run_direct_generator_pipeline_test()

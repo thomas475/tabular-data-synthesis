@@ -15,14 +15,34 @@ class Labeler(TransformerMixin):
     teacher model.
     """
 
-    def __init__(self, trained_model):
+    def __init__(self, trained_model, ignored_first_n_samples=0):
         self._trained_model = trained_model
+        self._ignored_first_n_samples = ignored_first_n_samples
 
-    def fit(self, X, y=None):
+    def fit(self, X, y):
         return self
 
-    def transform(self, X, y=None):
-        return X, self._trained_model.predict(X)
+    def transform(self, X, y):
+        if self._ignored_first_n_samples >= len(X):
+            return X, y
+        else:
+            complete_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
+            complete_target = pd.Series(y).copy().reset_index(drop=True)
+
+            resampled_dataset = complete_dataset.iloc[self._ignored_first_n_samples:, :]
+            original_target = complete_target.iloc[:self._ignored_first_n_samples]
+
+            resampled_target = pd.Series(
+                self._trained_model.predict(resampled_dataset)
+            ).copy().reset_index(drop=True)
+
+            complete_target = pd.concat([original_target, resampled_target], ignore_index=True)
+            complete_target.reset_index(drop=True)
+
+            return complete_dataset, complete_target
+
+    def fit_transform(self, X, y=None, **fit_params):
+        return self.fit(X, y, **fit_params).transform(X, y)
 
 
 class TargetInjector(TransformerMixin):
