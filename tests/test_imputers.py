@@ -6,7 +6,7 @@ from sklearn.impute import SimpleImputer
 from framework.imputers import *
 
 def drop_test_1():
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': np.NaN})
     y = adult['income'].map({'<=50K': 0, '>50K': 1})
@@ -18,7 +18,7 @@ def drop_test_1():
     assert len(X2) == len(y2)
 
 def drop_no_nan_test_1():
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': 1})
     y = adult['income'].map({'<=50K': 0, '>50K': 1})
@@ -28,7 +28,7 @@ def drop_no_nan_test_1():
     assert len(X) == len(imputer.fit_transform(X))
 
 def drop_no_nan_test_2():
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': 1})
     y = adult['income'].map({'<=50K': 0, '>50K': 1})
@@ -39,7 +39,7 @@ def drop_no_nan_test_2():
     assert len(y) == len(y_new)
 
 def simple_test_1():
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': np.NaN})
     y = adult['income'].map({'<=50K': 0, '>50K': 1})
@@ -47,7 +47,7 @@ def simple_test_1():
     SimpleImputer(strategy='most_frequent').fit_transform(X, y)
 
 def simple_no_nan_test_1():
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': 1})
     y = adult['income'].map({'<=50K': 0, '>50K': 1})

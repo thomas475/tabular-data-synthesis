@@ -1,5 +1,8 @@
 # file: ~/.gitignore_global
 .idea
 framework/__pycache__
+cache
+experiments/cache
+experiments/runs
 tests/cache
 dragan_test

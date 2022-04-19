@@ -8,6 +8,8 @@ import itertools
 from joblib import Parallel, delayed
 import traceback
 
+import os
+from pathlib import Path
 import time
 from datetime import datetime
 
@@ -43,6 +45,7 @@ class Scheduler:
 
     def __init__(
             self,
+            experiment_directory=None,
             experiment_base_title=None,
             pipelines=None,
             sample_multiplication_factors=None,
@@ -65,6 +68,7 @@ class Scheduler:
             verbose=100,
             random_state=None,
     ):
+        self._experiment_directory = experiment_directory
         self._experiment_base_title = experiment_base_title
         self._pipelines = pipelines
         self._sample_multiplication_factors = sample_multiplication_factors
@@ -88,9 +92,16 @@ class Scheduler:
         self._random_state = random_state
 
     def explore(self):
-        self._experiment_title = datetime.now().strftime('%Y%m%d_%H%M%S')
-        if self._experiment_base_title is not None:
-            self._experiment_title = self._experiment_base_title + '_' + self._experiment_title
+        experiment_identifier = datetime.now().strftime('%Y%m%d_%H%M%S')
+        if self._experiment_directory is None:
+            experiment_directory = os.getcwd()
+        else:
+            experiment_directory = self._experiment_directory
+        if self._experiment_base_title is None:
+            experiment_base_title = experiment_identifier
+        else:
+            experiment_base_title = self._experiment_base_title + '_' + experiment_identifier
+        experiment_base_path = os.path.join(experiment_directory, experiment_base_title)
 
         log_messages = []
         savesets = []
@@ -117,9 +128,10 @@ class Scheduler:
                 ignore_index=True
             )
 
-        with open(self._experiment_title + '.log', 'w') as log_file:
+        Path(experiment_directory).mkdir(parents=True, exist_ok=True)
+        with open(experiment_base_path + '.log', 'w') as log_file:
             log_file.write('\n\n'.join(log_messages))
-        savesets_frame.to_csv(self._experiment_title + '.csv', index=False)
+        savesets_frame.to_csv(experiment_base_path + '.csv', index=False)
 
     def _explore_teacher_labeled_augmented_student_pipeline(self):
         log_messages = []

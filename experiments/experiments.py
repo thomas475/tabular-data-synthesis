@@ -4,6 +4,8 @@ from sklearn.tree import DecisionTreeClassifier
 import category_encoders as ce
 from skopt.space import Real, Categorical, Integer
 
+import os
+
 from framework.scheduler import Scheduler
 from framework.imputers import MostFrequentImputer
 from framework.transformers import *
@@ -82,7 +84,7 @@ class AugmentationRangeExperiment:
         datasets = []
 
         # load adult dataset
-        adult = pd.read_csv('../data/adult.csv')
+        adult = pd.read_csv('data/adult.csv')
 
         # preprocess dataset
         X = adult.drop(columns='income')
@@ -94,8 +96,7 @@ class AugmentationRangeExperiment:
         y.name = len(X.columns)
 
         # choose desired number of samples used from this dataset
-        # selected_n_samples = len(X)
-        selected_n_samples = 1000
+        selected_n_samples = len(X)
         total_n_samples = min(selected_n_samples, len(X))
 
         # set number of samples, train size and test size so that they are divisible by cv
@@ -110,9 +111,11 @@ class AugmentationRangeExperiment:
 
 # ===== LOAD DATASET ======================================================== #
 
-        experiment_base_title = 'runs/augmentation_range_'
+        experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
+        experiment_base_title = 'augmentation_range'
 
         scheduler = Scheduler(
+            experiment_directory=experiment_directory,
             experiment_base_title=experiment_base_title,
             pipelines=pipelines,
             sample_multiplication_factors=sample_multiplication_factors,

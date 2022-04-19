@@ -3,7 +3,7 @@ import pandas as pd
 
 from framework.transformers import *
 
-adult = pd.read_csv('../data/adult.csv')
+adult = pd.read_csv('data/adult.csv')
 X = adult.drop(columns='income')
 X = X.replace({'?': np.NaN})
 y = adult['income'].map({'<=50K': 0, '>50K': 1})

@@ -163,7 +163,7 @@ def load_datasets():
     datasets = []
 
     # load adult dataset
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
 
     # preprocess dataset
     X = adult.drop(columns='income')

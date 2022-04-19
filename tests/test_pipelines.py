@@ -114,7 +114,7 @@ def run_teacher_pipeline_test():
     #     sampler=ProportionalConditionalGANSampler(sample_multiplication_factor=1, epochs=1)
     # )
 
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': np.nan})
     X.columns = range(0, len(X.columns))
@@ -248,7 +248,7 @@ def run_indirect_generator_pipeline_test():
     #     sampler=ProportionalConditionalGANSampler(sample_multiplication_factor=1, epochs=1)
     # )
 
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': np.nan})
     X.columns = range(0, len(X.columns))
@@ -372,7 +372,7 @@ def run_direct_generator_pipeline_test():
     #     sampler=ProportionalConditionalGANSampler(sample_multiplication_factor=1, epochs=1)
     # )
 
-    adult = pd.read_csv('../data/adult.csv')
+    adult = pd.read_csv('data/adult.csv')
     X = adult.drop(columns='income')
     X = X.replace({'?': np.nan})
     X.columns = range(0, len(X.columns))
