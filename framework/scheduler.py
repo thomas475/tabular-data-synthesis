@@ -493,7 +493,8 @@ class Scheduler:
                 ), 'random_state', self._random_state),
                 teacher=self._set_attribute_if_available(labeler(
                     trained_model=trained_teacher['model'].get_estimator(),
-                    ignored_first_n_samples=int(len(X_train) - (len(X_train) / self._cv))
+                    only_sampled=False,
+                    sample_multiplication_factor=sample_multiplication_factor
                 ), 'random_state', self._random_state),
                 student=self._set_attribute_if_available(student(), 'random_state', self._random_state),
                 search_spaces=search_spaces,

@@ -94,6 +94,4 @@ class CollapseEncoder(Encoder):
         X = pd.concat([X, pd.Series(np.ones(len(X)), index=X.index)], axis=1)
         # X = pd.concat([X, pd.Series(np.ones(len(X)), index=X.index, name='categorical')], axis=1)
 
-        print(X)
-
         return X
