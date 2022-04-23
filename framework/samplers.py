@@ -16,6 +16,7 @@ from ydata_synthetic.synthesizers import ModelParameters, TrainParameters
 
 from framework.racog import RACOG
 
+import os
 import warnings
 import tensorflow as tf
 import random
@@ -681,6 +682,9 @@ class ProportionalVanillaGANSampler(ProportionalSampler):
     def fit(self, X, y):
         _set_global_random_state(self.random_state)
 
+        if not hasattr(self, '_cache_prefixes'):
+            self._cache_prefixes = []
+
         # reset vanilla gan models
         self._vanilla_gan = {}
 
@@ -708,10 +712,13 @@ class ProportionalVanillaGANSampler(ProportionalSampler):
 
             original_subset = original_dataset.iloc[[x for x in range(0, len(y)) if y[x] == class_name]]
 
+            cache_prefix = str(int(time.time() * 1000)) + '_' + str(uuid4())
+            self._cache_prefixes.append(cache_prefix)
+
             self._vanilla_gan[class_name].train(
                 data=original_subset,
                 train_arguments=TrainParameters(
-                    cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
+                    cache_prefix=cache_prefix,
                     epochs=self.epochs,
                     sample_interval=self.sample_interval
                 ),
@@ -791,7 +798,15 @@ class ProportionalVanillaGANSampler(ProportionalSampler):
         if hasattr(y, 'name'):
             resampled_target.name = original_target_title
 
+        self.clear_cache()
+
         return resampled_dataset, resampled_target
+
+    def clear_cache(self):
+        if hasattr(self, '_cache_prefixes'):
+            for cache_prefix in self._cache_prefixes:
+                _clear_gan_cache(cache_prefix)
+            self._cache_prefixes = []
 
 
 class UnlabeledVanillaGANSampler(UnlabeledSampler):
@@ -870,6 +885,9 @@ class UnlabeledVanillaGANSampler(UnlabeledSampler):
     def fit(self, X, y=None):
         _set_global_random_state(self.random_state)
 
+        if not hasattr(self, '_cache_prefixes'):
+            self._cache_prefixes = []
+
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(original_dataset.columns)
 
@@ -883,10 +901,13 @@ class UnlabeledVanillaGANSampler(UnlabeledSampler):
             )
         )
 
+        cache_prefix = str(int(time.time() * 1000)) + '_' + str(uuid4())
+        self._cache_prefixes.append(cache_prefix)
+
         self._vanilla_gan.train(
             data=original_dataset,
             train_arguments=TrainParameters(
-                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
+                cache_prefix=cache_prefix,
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -949,7 +970,15 @@ class UnlabeledVanillaGANSampler(UnlabeledSampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
+        self.clear_cache()
+
         return resampled_dataset, resampled_target
+
+    def clear_cache(self):
+        if hasattr(self, '_cache_prefixes'):
+            for cache_prefix in self._cache_prefixes:
+                _clear_gan_cache(cache_prefix)
+            self._cache_prefixes = []
 
 
 class ProportionalConditionalGANSampler(ProportionalSampler):
@@ -1029,6 +1058,9 @@ class ProportionalConditionalGANSampler(ProportionalSampler):
     def fit(self, X, y):
         _set_global_random_state(self.random_state)
 
+        if not hasattr(self, '_cache_prefixes'):
+            self._cache_prefixes = []
+
         # set the number of classes
         unique, _ = np.unique(y, return_counts=True)
         self._cgan = CGAN(
@@ -1052,11 +1084,14 @@ class ProportionalConditionalGANSampler(ProportionalSampler):
         target_column_title = str(len(original_dataset.columns))
         original_dataset[target_column_title] = y
 
+        cache_prefix = str(int(time.time() * 1000)) + '_' + str(uuid4())
+        self._cache_prefixes.append(cache_prefix)
+
         self._cgan.train(
             data=original_dataset,
             label_col=target_column_title,
             train_arguments=TrainParameters(
-                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
+                cache_prefix=cache_prefix,
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -1146,7 +1181,15 @@ class ProportionalConditionalGANSampler(ProportionalSampler):
         if hasattr(y, 'name'):
             resampled_target.name = original_target_title
 
+        self.clear_cache()
+
         return resampled_dataset, resampled_target
+
+    def clear_cache(self):
+        if hasattr(self, '_cache_prefixes'):
+            for cache_prefix in self._cache_prefixes:
+                _clear_gan_cache(cache_prefix)
+            self._cache_prefixes = []
 
 
 class UnlabeledConditionalGANSampler(UnlabeledSampler):
@@ -1226,6 +1269,9 @@ class UnlabeledConditionalGANSampler(UnlabeledSampler):
     def fit(self, X, y=None):
         _set_global_random_state(self.random_state)
 
+        if not hasattr(self, '_cache_prefixes'):
+            self._cache_prefixes = []
+
         # change the column titles for easier use
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
@@ -1246,11 +1292,14 @@ class UnlabeledConditionalGANSampler(UnlabeledSampler):
             num_classes=1
         )
 
+        cache_prefix = str(int(time.time() * 1000)) + '_' + str(uuid4())
+        self._cache_prefixes.append(cache_prefix)
+
         self._cgan.train(
             data=original_dataset,
             label_col=target_column_title,
             train_arguments=TrainParameters(
-                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
+                cache_prefix=cache_prefix,
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -1318,7 +1367,15 @@ class UnlabeledConditionalGANSampler(UnlabeledSampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
+        self.clear_cache()
+
         return resampled_dataset, resampled_target
+
+    def clear_cache(self):
+        if hasattr(self, '_cache_prefixes'):
+            for cache_prefix in self._cache_prefixes:
+                _clear_gan_cache(cache_prefix)
+            self._cache_prefixes = []
 
 
 class ProportionalDRAGANSampler(ProportionalSampler):
@@ -1404,6 +1461,9 @@ class ProportionalDRAGANSampler(ProportionalSampler):
     def fit(self, X, y):
         _set_global_random_state(self.random_state)
 
+        if not hasattr(self, '_cache_prefixes'):
+            self._cache_prefixes = []
+
         # reset dragan models
         self._dragan = {}
 
@@ -1431,10 +1491,13 @@ class ProportionalDRAGANSampler(ProportionalSampler):
 
             original_subset = original_dataset.iloc[[x for x in range(0, len(y)) if y[x] == class_name]]
 
+            cache_prefix = str(int(time.time() * 1000)) + '_' + str(uuid4())
+            self._cache_prefixes.append(cache_prefix)
+
             self._dragan[class_name].train(
                 data=original_subset,
                 train_arguments=TrainParameters(
-                    cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
+                    cache_prefix=cache_prefix,
                     epochs=self.epochs,
                     sample_interval=self.sample_interval
                 ),
@@ -1514,7 +1577,15 @@ class ProportionalDRAGANSampler(ProportionalSampler):
         if hasattr(y, 'name'):
             resampled_target.name = original_target_title
 
+        self.clear_cache()
+
         return resampled_dataset, resampled_target
+
+    def clear_cache(self):
+        if hasattr(self, '_cache_prefixes'):
+            for cache_prefix in self._cache_prefixes:
+                _clear_gan_cache(cache_prefix)
+            self._cache_prefixes = []
 
 
 class UnlabeledDRAGANSampler(UnlabeledSampler):
@@ -1599,6 +1670,9 @@ class UnlabeledDRAGANSampler(UnlabeledSampler):
     def fit(self, X, y=None):
         _set_global_random_state(self.random_state)
 
+        if not hasattr(self, '_cache_prefixes'):
+            self._cache_prefixes = []
+
         # change the column titles for easier use
         original_dataset = pd.DataFrame(X).copy().reset_index(drop=True)
         original_dataset.columns = _convert_list_to_string_list(range(0, len(original_dataset.columns)))
@@ -1615,10 +1689,13 @@ class UnlabeledDRAGANSampler(UnlabeledSampler):
             n_discriminator=self.discriminator_updates_per_step
         )
 
+        cache_prefix = str(int(time.time() * 1000)) + '_' + str(uuid4())
+        self._cache_prefixes.append(cache_prefix)
+
         self._dragan.train(
             data=original_dataset,
             train_arguments=TrainParameters(
-                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
+                cache_prefix=cache_prefix,
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -1678,7 +1755,15 @@ class UnlabeledDRAGANSampler(UnlabeledSampler):
         if hasattr(X, 'columns'):
             resampled_dataset.columns = original_column_titles
 
+        self.clear_cache()
+
         return resampled_dataset, resampled_target
+
+    def clear_cache(self):
+        if hasattr(self, '_cache_prefixes'):
+            for cache_prefix in self._cache_prefixes:
+                _clear_gan_cache(cache_prefix)
+            self._cache_prefixes = []
 
 
 def _convert_list_to_string_list(item_list):
@@ -1692,3 +1777,17 @@ def _set_global_random_state(random_state):
     random.seed(random_state)
     np.random.seed(random_state)
     tf.random.set_seed(random_state)
+
+
+def _clear_gan_cache(cache_prefix):
+    files_to_remove = [
+        './cache/' + cache_prefix + '_discriminator_model_weights_step_0.h5',
+        './cache/' + cache_prefix + '_generator_model_weights_step_0.h5',
+        './cache/' + cache_prefix + '_sample_0.npy'
+    ]
+
+    for file in files_to_remove:
+        try:
+            os.remove(file)
+        except:
+            pass

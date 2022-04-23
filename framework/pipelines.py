@@ -271,6 +271,9 @@ class OptimalModelPipeline:
     def score(self, X, y):
         return self._optimal_model.score(X, y)
 
+    def get_step(self, name):
+        return self._optimal_model.best_estimator_.named_steps[name]
+
     def get_estimator(self):
         last_step_name = list(self._optimal_model.best_estimator_.named_steps.keys())[-1]
         return self._optimal_model.best_estimator_.named_steps[last_step_name]
