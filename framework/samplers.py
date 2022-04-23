@@ -19,6 +19,9 @@ from framework.racog import RACOG
 import warnings
 import tensorflow as tf
 import random
+import time
+from uuid import uuid4
+
 
 
 class ProportionalSampler(BaseEstimator, TransformerMixin):
@@ -708,6 +711,7 @@ class ProportionalVanillaGANSampler(ProportionalSampler):
             self._vanilla_gan[class_name].train(
                 data=original_subset,
                 train_arguments=TrainParameters(
+                    cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
                     epochs=self.epochs,
                     sample_interval=self.sample_interval
                 ),
@@ -882,6 +886,7 @@ class UnlabeledVanillaGANSampler(UnlabeledSampler):
         self._vanilla_gan.train(
             data=original_dataset,
             train_arguments=TrainParameters(
+                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -1051,6 +1056,7 @@ class ProportionalConditionalGANSampler(ProportionalSampler):
             data=original_dataset,
             label_col=target_column_title,
             train_arguments=TrainParameters(
+                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -1244,6 +1250,7 @@ class UnlabeledConditionalGANSampler(UnlabeledSampler):
             data=original_dataset,
             label_col=target_column_title,
             train_arguments=TrainParameters(
+                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),
@@ -1427,6 +1434,7 @@ class ProportionalDRAGANSampler(ProportionalSampler):
             self._dragan[class_name].train(
                 data=original_subset,
                 train_arguments=TrainParameters(
+                    cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
                     epochs=self.epochs,
                     sample_interval=self.sample_interval
                 ),
@@ -1610,6 +1618,7 @@ class UnlabeledDRAGANSampler(UnlabeledSampler):
         self._dragan.train(
             data=original_dataset,
             train_arguments=TrainParameters(
+                cache_prefix=str(int(time.time() * 1000)) + '_' + str(uuid4()),
                 epochs=self.epochs,
                 sample_interval=self.sample_interval
             ),

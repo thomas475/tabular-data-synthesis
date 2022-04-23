@@ -14,22 +14,38 @@ from framework.samplers import *
 import framework.encoders as enc
 
 
-class AugmentationRangeExperiment:
+class Exploration:
     def run(self):
         pipelines = [
-            TeacherLabeledAugmentedStudentPipeline
+            TeacherLabeledAugmentedStudentPipeline,
+            IndirectGeneratorLabeledAugmentedStudentPipeline,
+            DirectGeneratorLabeledAugmentedStudentPipeline
         ]
         imputers = [
             MostFrequentImputer,
         ]
         encoders = [
+            # ce.BinaryEncoder,
+            ce.CatBoostEncoder,
+            ce.CountEncoder,
+            ce.OrdinalEncoder,
             ce.TargetEncoder,
+            enc.CollapseEncoder
         ]
         scalers = [
             RobustScaler
         ]
         samplers = [
             (ProportionalConditionalGANSampler, {
+                # 'sampler__sample_multiplication_factor': Integer(0, 20),
+                'sampler__epochs': [1],
+                'sampler__batch_size': Integer(32, 256),
+                'sampler__learning_rate': Real(0.00001, 0.01),
+                'sampler__noise_dim': Integer(64, 512),
+                'sampler__layers_dim': Integer(32, 256)
+            }),
+            (UnlabeledConditionalGANSampler, {
+                # 'sampler__sample_multiplication_factor': Integer(0, 20),
                 'sampler__epochs': [1],
                 'sampler__batch_size': Integer(32, 256),
                 'sampler__learning_rate': Real(0.00001, 0.01),
@@ -69,13 +85,13 @@ class AugmentationRangeExperiment:
             'roc_auc'
         ]
         sample_multiplication_factors = [
-            0, 1, 2, 5, 10, 20, 50, 100, 200
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20
         ]
-        n_iter = 50
-        n_points = 1
+        n_iter = 20
+        n_points = 2
         train_ratio = 0.75
         cv = 5
-        n_jobs = 1
+        n_jobs = -1
         verbose = 100
         random_state = 42
 
@@ -96,7 +112,7 @@ class AugmentationRangeExperiment:
         y.name = len(X.columns)
 
         # choose desired number of samples used from this dataset
-        selected_n_samples = len(X)
+        selected_n_samples = 1000
         total_n_samples = min(selected_n_samples, len(X))
 
         # set number of samples, train size and test size so that they are divisible by cv
@@ -112,7 +128,7 @@ class AugmentationRangeExperiment:
 # ===== LOAD DATASET ======================================================== #
 
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
-        experiment_base_title = 'augmentation_range'
+        experiment_base_title = 'cgan_adult'
 
         scheduler = Scheduler(
             experiment_directory=experiment_directory,
@@ -142,4 +158,4 @@ class AugmentationRangeExperiment:
         scheduler.explore()
 
 
-AugmentationRangeExperiment().run()
+Exploration().run()
