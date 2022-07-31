@@ -56,15 +56,15 @@ def join_grids(grids):
 
 def get_encoder_list(categorical_columns):
     return [
-        # BinaryEncoder(cols=categorical_columns),
-        # CatBoostEncoder(cols=categorical_columns),
-        # CollapseEncoder(cols=categorical_columns),
-        # CountEncoder(cols=categorical_columns),
-        # GLMMEncoder(cols=categorical_columns),
+        BinaryEncoder(cols=categorical_columns),
+        CatBoostEncoder(cols=categorical_columns),
+        CollapseEncoder(cols=categorical_columns),
+        CountEncoder(cols=categorical_columns),
+        GLMMEncoder(cols=categorical_columns),
         CV5GLMMEncoder(cols=categorical_columns),
-        # OneHotEncoder(cols=categorical_columns),
-        # TargetEncoder(cols=categorical_columns),
-        # CV5TargetEncoder(cols=categorical_columns),
+        OneHotEncoder(cols=categorical_columns),
+        TargetEncoder(cols=categorical_columns),
+        CV5TargetEncoder(cols=categorical_columns),
     ]
 
 
@@ -74,49 +74,49 @@ def get_generator_list(is_classification_task):
     default_epochs = [1]
 
     generator_list = [
-        # (PrivBNGenerator(is_classification_task=is_classification_task), {
-        #     # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
-        #     # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
-        #     'theta': [10, 15, 20, 30]
-        # }),
-        # (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
-        #     'default_distribution': [  # default 'parametric'
-        #         'univariate',
-        #         # Let ``copulas`` select the optimal univariate distribution. This may result in non-parametric models being used.
-        #         'parametric',
-        #         # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to parametric distributions only.
-        #         'bounded',
-        #         # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to bounded distributions only.
-        #     ]
-        # }),
-        # (TableGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs  # default 300
-        # }),
-        # (CTGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs  # default 300
-        # }),
-        # (CopulaGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs  # default 300
-        # }),
-        # (TVAEGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs  # default 300
-        # }),
-        # (MedGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 1000
-        #     'epochs': default_epochs  # default 2000
-        # }),
-        # (DPCTGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs  # default 300
-        # }),
-        # (CTABGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs  # default 1
-        # })
+        (PrivBNGenerator(is_classification_task=is_classification_task), {
+            # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
+            # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
+            'theta': [10, 15, 20, 30]
+        }),
+        (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
+            'default_distribution': [  # default 'parametric'
+                'univariate',
+                # Let ``copulas`` select the optimal univariate distribution. This may result in non-parametric models being used.
+                'parametric',
+                # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to parametric distributions only.
+                'bounded',
+                # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to bounded distributions only.
+            ]
+        }),
+        (TableGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': default_epochs  # default 300
+        }),
+        (CTGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': default_epochs  # default 300
+        }),
+        (CopulaGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': default_epochs  # default 300
+        }),
+        (TVAEGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': default_epochs  # default 300
+        }),
+        (MedGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 1000
+            'epochs': default_epochs  # default 2000
+        }),
+        (DPCTGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': default_epochs  # default 300
+        }),
+        (CTABGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': default_epochs  # default 1
+        })
     ]
     if is_classification_task:
         generator_list.append(
@@ -124,12 +124,12 @@ def get_generator_list(is_classification_task):
                 'k_neighbors': [4, 5, 6, 7]  # default 5
             })
         )
-        # generator_list.append(
-        #     (CWGANGPGenerator(is_classification_task=is_classification_task), {
-        #         'batch_size': default_batch_sizes,  # default 128
-        #         'epochs': default_epochs  # default 300
-        #     }),
-        # )
+        generator_list.append(
+            (CWGANGPGenerator(is_classification_task=is_classification_task), {
+                'batch_size': default_batch_sizes,  # default 128
+                'epochs': default_epochs  # default 300
+            }),
+        )
     else:
         generator_list.append(
             (WGANGPGenerator(is_classification_task=is_classification_task), {
@@ -145,8 +145,8 @@ def get_metric_list(dataset_task):
     if dataset_task == BINARY_CLASSIFICATION:
         metric_list = [
             ('accuracy', accuracy_score, {}),
-            # ('f1', f1_score, {}),
-            # ('roc_auc', roc_auc_score, {}),
+            ('f1', f1_score, {}),
+            ('roc_auc', roc_auc_score, {}),
         ]
     elif dataset_task == MULTICLASS_CLASSIFICATION:
         metric_list = [
