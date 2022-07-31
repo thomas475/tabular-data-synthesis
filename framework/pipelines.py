@@ -8,10 +8,59 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_memory
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.utils.metaestimators import BaseEstimator
 
 from skopt import BayesSearchCV
 
 from inspect import signature
+
+
+class AugmentedEstimation(BaseEstimator):
+    def __init__(self, generator, estimator, n_samples, categorical_columns, ordinal_columns, encoder=None):
+        self.generator = generator
+        self.estimator = estimator
+        self.n_samples = n_samples
+        self.categorical_columns = categorical_columns
+        self.ordinal_columns = ordinal_columns
+        self.encoder = encoder
+
+    def fit(self, X, y):
+        self.generator.fit(
+            X,
+            y,
+            categorical_columns=self.categorical_columns,
+            ordinal_columns=self.ordinal_columns
+        )
+        X_sampled, y_sampled = self.generator.sample(self.n_samples)
+
+        X_augmented = pd.concat([X.copy(), X_sampled], ignore_index=True).reset_index(drop=True)
+        y_augmented = pd.concat([y.copy(), y_sampled], ignore_index=True).reset_index(drop=True)
+
+        if self.encoder is not None and self.categorical_columns:
+            X_augmented = self.encoder.fit_transform(X_augmented)
+
+        self.estimator.fit(X_augmented, y_augmented)
+
+        if hasattr(self.estimator, 'classes_'):
+            self.classes_ = self.estimator.classes_
+
+        return self
+
+    def predict(self, X):
+        if self.encoder is not None and self.categorical_columns:
+            X = self.encoder.transform(X.copy())
+        return self.estimator.predict(X)
+
+    def predict_proba(self, X):
+        if self.encoder is not None and self.categorical_columns:
+            X = self.encoder.transform(X.copy())
+        return self.estimator.predict_proba(X)
+
+    def get_generator(self):
+        return self.generator
+
+    def get_estimator(self):
+        return self.estimator
 
 
 class CustomPipeline(Pipeline):

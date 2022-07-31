@@ -1,0 +1,1 @@
+from framework.generators.ydata_synthetic.synthesizers.gan import ModelParameters, TrainParameters
