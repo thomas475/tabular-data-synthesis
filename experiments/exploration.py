@@ -231,6 +231,10 @@ def tune_teacher(
         # our dataset is completely numerical now, so we update the columns
         categorical_columns = []
         ordinal_columns = X_train.columns
+        y_train = y_train.copy()
+        y_train.name = len(ordinal_columns)
+        y_test = y_test.copy()
+        y_test.name = len(ordinal_columns)
 
     # convert categorical numerical entries to int
     X_train[categorical_columns] = X_train[categorical_columns].astype(int)
@@ -371,6 +375,10 @@ def tune_student(
             # our dataset is completely numerical now, so we update the columns
             categorical_columns = []
             ordinal_columns = X_train.columns
+            y_train = y_train.copy()
+            y_train.name = len(ordinal_columns)
+            y_test = y_test.copy()
+            y_test.name = len(ordinal_columns)
 
         # convert categorical numerical entries to int
         X_train[categorical_columns] = X_train[categorical_columns].astype(int)
@@ -424,6 +432,10 @@ def tune_student(
         X_sampled, y_sampled = tuned_generator.sample(train_size)
 
         generator_sampling_time = timeit.default_timer() - generator_sampling_start_time
+
+        # convert categorical numerical entries to int
+        X_sampled[categorical_columns] = X_sampled[categorical_columns].astype(int)
+        X_sampled[categorical_columns] = X_sampled[categorical_columns].astype(int)
 
         real_dataset = X_train.copy()
         real_dataset[y_train.name] = y_train.copy()
@@ -597,6 +609,10 @@ def tune_student(
         # generate the maximum number of samples defined in n_samples_list using the tuned generator, so we can
         # subsample from it instead of generating again
         X_sampled_max, y_sampled_max = tuned_generator.sample(max(n_samples_list))
+
+        # convert categorical numerical entries to int
+        X_sampled_max[categorical_columns] = X_sampled_max[categorical_columns].astype(int)
+        X_sampled_max[categorical_columns] = X_sampled_max[categorical_columns].astype(int)
 
         max_n_samples_generation_time = timeit.default_timer() - max_n_samples_generation_start_time
 
