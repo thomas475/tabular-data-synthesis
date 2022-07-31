@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 
 from ctgan import CTGANSynthesizer, TVAESynthesizer
-from sdgym.synthesizers import PrivBN, TableGAN, MedGAN
+from framework.generators.sdgym.synthesizers import PrivBN, TableGAN, MedGAN
 from sdv.tabular import CopulaGAN, GaussianCopula
 from framework.generators.ctabgan.model.synthesizer.ctabgan_synthesizer import CTABGANSynthesizer
 from framework.generators.ydata_synthetic.synthesizers.regular import CWGANGP, WGAN_GP

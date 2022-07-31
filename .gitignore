@@ -1,9 +1,11 @@
 # file: ~/.gitignore_global
 .idea
 framework/__pycache__
+catboost_info
 cache
 data
 experiments/cache
+experiments/datasets
 experiments/runs
 tests/cache
 dragan_test
