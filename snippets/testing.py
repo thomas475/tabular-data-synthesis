@@ -7,13 +7,20 @@ from sklearn.model_selection import train_test_split
 import random
 import os
 
+from itertools import product
+
+
+def product_dict(**kwargs):
+    keys = kwargs.keys()
+    vals = kwargs.values()
+    for instance in product(*vals):
+        yield dict(zip(keys, instance))
+
+
 name, task, X, y, cat, ordinal = load_adult()
 
-for random_state in [1, 2, 3, 4]:
-    os.environ['PYTHONHASHSEED'] = str(random_state)
-    random.seed(random_state)
-    np.random.seed(random_state)
+dictionary = {
+    'iterations': [10, 25, 50, 100, 250, 500]
+}
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=10, stratify=y)
-
-    print(X_train)
+print(list(product_dict(**dictionary)))

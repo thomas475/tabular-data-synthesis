@@ -69,9 +69,8 @@ def get_encoder_list(categorical_columns):
 
 
 def get_generator_list(is_classification_task):
-    # default_batch_sizes = [10, 20, 50]
-    default_batch_sizes = [500]
-    default_epochs = [1]
+    default_batch_sizes = [10, 20, 50]
+    default_epochs = [10]
 
     generator_list = [
         (PrivBNGenerator(is_classification_task=is_classification_task), {
@@ -903,10 +902,8 @@ def test_parallelized_run():
     teacher = (
         CatBoostClassifier(),
         {
-            'depth': [6],
-            # 'depth': [4, 6, 8, 10],
-            'iterations': [1]
-            # 'iterations': [10, 25, 50]
+            'depth': [4, 6, 8, 10],
+            'iterations': [10, 25, 50]
         }
     )
     metric_list = get_metric_list(dataset_task)

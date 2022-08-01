@@ -12,6 +12,7 @@ openml==0.12.2
 pandas==1.4.3
 scikit-optimize==0.9.0
 scikit_learn==1.1.1
+sdv==0.13.1
 sklearn==0.0
 tensorflow==2.9.1
 torch==1.12.0
