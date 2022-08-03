@@ -339,9 +339,15 @@ if __name__ == '__main__':
     for load_set in [
         # load_adult,
         # load_amazon,
-        load_census_income,
+        # load_census_income,
         load_electricity,
-        load_higgs
+        # load_higgs,
+        # load_covertype,
+        # load_credit_g,
+        # load_jungle_chess,
+        # load_california,
+        load_diamonds,
+        load_king
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 

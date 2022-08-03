@@ -105,7 +105,15 @@ def load_electricity():
     dataset_task = BINARY_CLASSIFICATION
     dataset_id = 151
 
-    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id,
+        drop_columns=[
+            'date',
+            'day'
+        ]
+    )
 
 
 # like in "Deep Neural Networks and Tabular Data: A Survey"
