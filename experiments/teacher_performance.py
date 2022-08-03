@@ -227,10 +227,9 @@ def test_teacher(
 
     Path(experiment_directory).mkdir(parents=True, exist_ok=True)
     Path(os.path.join(experiment_directory, run_title)).mkdir(parents=True, exist_ok=True)
-    os.chdir(os.path.join(experiment_directory, run_title))
-    with open(run_title + '.log', 'w') as log_file:
+    with open(os.path.join(experiment_directory, run_title, run_title + '.log'), 'w') as log_file:
         log_file.write('\n\n'.join(log_messages))
-    results.to_csv(run_title + '.csv', index=False)
+    results.to_csv(os.path.join(experiment_directory, run_title, run_title + '.csv'), index=False)
 
 
 def get_teacher_list(is_classification_task):
@@ -269,8 +268,9 @@ def visualize_experiments(experiment_directory, experiment_basename, repeat_visu
             # if True:
                 csv_files = find_files_of_type(absolute_directory_path, '.csv')
 
-                if not csv_files:
+                if len(csv_files) == 0:
                     print('no csv files found.')
+                    continue
 
                 csv_file = csv_files[0]
 
@@ -336,41 +336,50 @@ def find_files_of_type(absolute_directory_path, filetype):
 
 
 if __name__ == '__main__':
-    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
+    for load_set in [
+        # load_adult,
+        # load_amazon,
+        load_census_income,
+        load_electricity,
+        load_higgs
+    ]:
+        dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
-    is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-    experiment_directory = os.path.join(os.getcwd(), 'experiments', 'preliminaries')
-    experiment_basename = 'teacher_test'
+        is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+        experiment_directory = os.path.join(os.getcwd(), 'experiments', 'preliminaries')
+        experiment_basename = 'teacher_test'
 
-    user_input = input('Run Teacher ? [y/N]')
-    if user_input == 'y':
-        deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
-        deep_ordinal_encoder.fit(X, y)
-        X, y = deep_ordinal_encoder.transform(X, y)
-        categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-        ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+        user_input = 'y'
+        # user_input = input('Run Teacher ? [y/N]')
+        if user_input == 'y':
+            deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+            deep_ordinal_encoder.fit(X, y)
+            X, y = deep_ordinal_encoder.transform(X, y)
+            categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+            ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
 
-        encoder = CollapseEncoder()
-        scaler = RobustScaler()
-        teacher_list = get_teacher_list(is_classification_task)
-        metric_list = get_metric_list(dataset_task)
-        train_size = 500
-        random_state_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        verbose = 0
+            encoder = CollapseEncoder()
+            scaler = RobustScaler()
+            teacher_list = get_teacher_list(is_classification_task)
+            metric_list = get_metric_list(dataset_task)
+            train_size = 500
+            random_state_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            verbose = 0
 
-        test_teacher(
-            is_classification_task=is_classification_task,
-            experiment_directory=experiment_directory,
-            experiment_basename=experiment_basename,
-            dataset=(dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns),
-            encoder=encoder,
-            scaler=scaler,
-            teacher_list=teacher_list,
-            metric_list=metric_list,
-            random_state_list=random_state_list,
-            verbose=verbose
-        )
+            test_teacher(
+                is_classification_task=is_classification_task,
+                experiment_directory=experiment_directory,
+                experiment_basename=experiment_basename,
+                dataset=(dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns),
+                encoder=encoder,
+                scaler=scaler,
+                teacher_list=teacher_list,
+                metric_list=metric_list,
+                random_state_list=random_state_list,
+                verbose=verbose
+            )
 
-    user_input = input('Visualize Runs ? [y/N]')
-    if user_input == 'y':
-        visualize_experiments(experiment_directory, experiment_basename, True)
+        user_input = 'y'
+        # user_input = input('Visualize Runs ? [y/N]')
+        if user_input == 'y':
+            visualize_experiments(experiment_directory, experiment_basename, True)

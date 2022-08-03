@@ -31,6 +31,11 @@ def load_dataset(dataset_name, dataset_task, dataset_id, target_column=None, dro
         y = X[target_attribute]
         X = X.drop(columns=target_attribute)
 
+        if target_column in categorical_columns:
+            categorical_columns.remove(target_column)
+        if target_column in ordinal_columns:
+            ordinal_columns.remove(target_column)
+
     X = X.drop(columns=[column for column in X.columns if column in drop_columns])
     categorical_columns = [column for column in categorical_columns if column not in drop_columns]
     ordinal_columns = [column for column in ordinal_columns if column not in drop_columns]
