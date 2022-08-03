@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -231,42 +233,144 @@ def test_teacher(
     results.to_csv(run_title + '.csv', index=False)
 
 
+def get_teacher_list(is_classification_task):
+    teacher_list = []
+    if is_classification_task:
+        teacher_list = [
+            (CatBoostClassifier(), {
+                'iterations': [1, 5, 10, 25, 50, 75, 100, 175, 250, 375, 500, 750, 1000]
+            }),
+            (LGBMClassifier(), {
+                'num_iterations': [1, 5, 10, 25, 50, 75, 100, 175, 250, 375, 500, 750, 1000]
+            })
+        ]
+    else:
+        teacher_list = [
+            (CatBoostRegressor(), {
+                'iterations': [1, 5, 10, 25, 50, 75, 100, 175, 250, 375, 500, 750, 1000]
+            }),
+            (LGBMRegressor(), {
+                'num_iterations': [1, 5, 10, 25, 50, 75, 100, 175, 250, 375, 500, 750, 1000]
+            })
+        ]
+    return teacher_list
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def visualize_experiments(experiment_directory, experiment_basename, repeat_visualization=False):
+    experiment_directory_path = os.path.join(os.getcwd(), experiment_directory)
+
+    for directory_path in os.listdir(experiment_directory_path):
+        absolute_directory_path = os.path.join(experiment_directory_path, directory_path)
+        if directory_path.startswith(experiment_basename) and os.path.isdir(absolute_directory_path):
+            files = os.listdir(absolute_directory_path)
+            if 'results' not in files or repeat_visualization:
+            # if True:
+                csv_files = find_files_of_type(absolute_directory_path, '.csv')
+
+                if not csv_files:
+                    print('no csv files found.')
+
+                csv_file = csv_files[0]
+
+                results = pd.read_csv(csv_file)
+
+                if 'num_iterations' in results.columns:
+                    results['iterations'] = results['iterations'].fillna(0) + results['num_iterations'].fillna(0)
+                    results = results.drop(columns=['num_iterations'])
+
+                processed_results = results[
+                    ['teacher', 'optimization_metric', 'iterations', 'performance', 'run_time']
+                ].groupby(['teacher', 'optimization_metric', 'iterations'], as_index=False).mean()
+
+                absolute_results_directory_path = os.path.join(absolute_directory_path, 'results')
+                Path(absolute_results_directory_path).mkdir(parents=True, exist_ok=True)
+                processed_results.to_csv(
+                    os.path.join(
+                        absolute_results_directory_path,
+                        os.path.basename(absolute_directory_path) + '_processed.csv'
+                    ), index=False
+                )
+
+                for (teacher, metric), processed_results_per_metric in processed_results.groupby(['teacher', 'optimization_metric'], as_index=False):
+
+                    for x, y in [('iterations', 'performance'), ('iterations', 'run_time')]:
+
+                        sns.lineplot(
+                            x=processed_results_per_metric[x],
+                            y=processed_results_per_metric[y],
+                            marker='o'
+                        )
+                        plt.title(teacher + '_' + metric + ' ' + x + '_' + y)
+
+                        file_name = teacher + '_' + metric+ ' ' + x + '_' + y + '.png'
+                        plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+
+                        plt.clf()
+
+                if len(processed_results['teacher'].value_counts()) > 1:
+
+                    for metric, processed_results_per_metric in processed_results.groupby(['optimization_metric'], as_index=False):
+
+                        for x, y in [('iterations', 'performance'), ('iterations', 'run_time')]:
+
+                            sns.lineplot(
+                                data=processed_results_per_metric,
+                                x=x,
+                                y=y,
+                                hue='teacher',
+                                marker='o'
+                            )
+                            plt.title(metric + ' ' + x + '_' + y)
+
+                            file_name = metric + ' ' + x + '_' + y + '.png'
+                            plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+
+                            plt.clf()
+
+
+def find_files_of_type(absolute_directory_path, filetype):
+    filenames = os.listdir(absolute_directory_path)
+    return [os.path.join(absolute_directory_path, filename) for filename in filenames if filename.endswith(filetype)]
+
+
 if __name__ == '__main__':
     dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
 
-    deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
-    deep_ordinal_encoder.fit(X, y)
-    X, y = deep_ordinal_encoder.transform(X, y)
-    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
-
     is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-    experiment_directory = os.path.join(os.getcwd(), 'snippets', 'runs')
+    experiment_directory = os.path.join(os.getcwd(), 'experiments', 'preliminaries')
     experiment_basename = 'teacher_test'
-    encoder = CollapseEncoder()
-    scaler = RobustScaler()
-    teacher_list = [
-        (CatBoostClassifier(), {
-            'iterations': [10, 25, 50, 100, 500]
-        }),
-        # (LGBMClassifier(), {
-        #
-        # })
-    ]
-    metric_list = get_metric_list(dataset_task)
-    train_size = 500
-    random_state_list = [1, 2, 3, 4, 5]
-    verbose = 0
 
-    test_teacher(
-        is_classification_task=is_classification_task,
-        experiment_directory=experiment_directory,
-        experiment_basename=experiment_basename,
-        dataset=(dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns),
-        encoder=encoder,
-        scaler=scaler,
-        teacher_list=teacher_list,
-        metric_list=metric_list,
-        random_state_list=random_state_list,
-        verbose=verbose
-    )
+    user_input = input('Run Teacher ? [y/N]')
+    if user_input == 'y':
+        deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+        deep_ordinal_encoder.fit(X, y)
+        X, y = deep_ordinal_encoder.transform(X, y)
+        categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+        ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+        encoder = CollapseEncoder()
+        scaler = RobustScaler()
+        teacher_list = get_teacher_list(is_classification_task)
+        metric_list = get_metric_list(dataset_task)
+        train_size = 500
+        random_state_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        verbose = 0
+
+        test_teacher(
+            is_classification_task=is_classification_task,
+            experiment_directory=experiment_directory,
+            experiment_basename=experiment_basename,
+            dataset=(dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns),
+            encoder=encoder,
+            scaler=scaler,
+            teacher_list=teacher_list,
+            metric_list=metric_list,
+            random_state_list=random_state_list,
+            verbose=verbose
+        )
+
+    user_input = input('Visualize Runs ? [y/N]')
+    if user_input == 'y':
+        visualize_experiments(experiment_directory, experiment_basename, True)

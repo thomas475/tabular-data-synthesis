@@ -6,6 +6,7 @@ cache
 data
 experiments/cache
 experiments/datasets
+experiments/preliminaries
 experiments/runs
 tests/cache
 dragan_test
