@@ -337,15 +337,15 @@ def find_files_of_type(absolute_directory_path, filetype):
 
 if __name__ == '__main__':
     for load_set in [
-        # load_adult,
-        # load_amazon,
-        # load_census_income,
+        load_adult,
+        load_amazon,
+        load_census_income,
         load_electricity,
-        # load_higgs,
-        # load_covertype,
-        # load_credit_g,
-        # load_jungle_chess,
-        # load_california,
+        load_higgs,
+        load_covertype,
+        load_credit_g,
+        load_jungle_chess,
+        load_california,
         load_diamonds,
         load_king
     ]:
@@ -355,8 +355,8 @@ if __name__ == '__main__':
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'preliminaries')
         experiment_basename = 'teacher_test'
 
-        user_input = 'y'
-        # user_input = input('Run Teacher ? [y/N]')
+        # user_input = 'y'
+        user_input = input('Run Teacher for dataset "' + dataset_name + '" ? [y/N]')
         if user_input == 'y':
             deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
             deep_ordinal_encoder.fit(X, y)
@@ -385,7 +385,7 @@ if __name__ == '__main__':
                 verbose=verbose
             )
 
-        user_input = 'y'
-        # user_input = input('Visualize Runs ? [y/N]')
+        # user_input = 'y'
+        user_input = input('Visualize Runsfor dataset "' + dataset_name + '" ? [y/N]')
         if user_input == 'y':
             visualize_experiments(experiment_directory, experiment_basename, True)

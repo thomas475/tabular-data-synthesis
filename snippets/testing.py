@@ -2,25 +2,49 @@ import pandas as pd
 from category_encoders import *
 from framework.encoders import *
 import copy
-from experiments.datasets import load_adult
+from experiments.datasets import *
 from sklearn.model_selection import train_test_split
 import random
 import os
 
-from itertools import product
+from framework.samplers import *
 
+def get_relative_counts(column):
+    unique, counts = np.unique(column, return_counts=True)
 
-def product_dict(**kwargs):
-    keys = kwargs.keys()
-    vals = kwargs.values()
-    for instance in product(*vals):
-        yield dict(zip(keys, instance))
+    count_list = list(zip(unique.T, counts.T))
 
+    result = pd.DataFrame(columns=['value', 'count', 'proportion'])
+    for value, count in count_list:
+        result = result.append({
+            'value': int(value),
+            'count': int(count),
+            'proportion': round(float(count) / float(len(column)), 3)
+        }, ignore_index=True)
 
-name, task, X, y, cat, ordinal = load_adult()
+    return result
 
-dictionary = {
-    'iterations': [10, 25, 50, 100, 250, 500]
-}
+def run():
+    for load_set in [load_adult, load_covertype]:
+        dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
-print(list(product_dict(**dictionary)))
+        deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+        deep_ordinal_encoder.fit(X, y)
+        X, y = deep_ordinal_encoder.transform(X, y)
+        categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+        ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=2500, stratify=y)
+
+        generator = ProportionalCWGANGPGenerator(batch_size=50, epochs=1)
+        generator.fit(X_train, y_train, categorical_columns, ordinal_columns)
+        X_sampled, y_sampled = generator.sample(5000)
+
+        print(dataset_name)
+        original_counts = get_relative_counts(y_train)
+        sampled_counts = get_relative_counts(y_sampled)
+        print(original_counts)
+        print(sampled_counts)
+        print(original_counts.compare(sampled_counts))
+
+print(list(range(-1, 8, 3)))

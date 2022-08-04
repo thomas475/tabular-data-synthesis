@@ -63,6 +63,102 @@ class PrivBNGenerator(BaseEstimator):
         return X, y
 
 
+class ProportionalSMOTEGenerator(BaseEstimator):
+    """
+    Generator that implements a SMOTE oversampling routine. SMOTE is usually
+    used for balancing in imbalanced datasets. This implementation uses SMOTE
+    for generating samples of each class in the same proportion as they are
+    in the training set.
+
+    Parameters
+    ----------
+
+    k_neighbors : int or object, default=5
+        If int, number of nearest neighbours to be used to construct synthetic
+        samples. If object, an estimator that inherits from KNeighborsMixin that
+        will be used to find the k_neighbors.
+
+    random_state : int, default=None
+        Control the randomization of the algorithm.
+
+    References
+    ----------
+
+    .. [1] https://imbalanced-learn.org/stable/references/generated/imblearn.over_sampling.SMOTE.html
+
+    .. [2] N. V. Chawla, K. W. Bowyer, L. O.Hall, W. P. Kegelmeyer, “SMOTE:
+           synthetic minority over-sampling technique,” Journal of artificial
+           intelligence research, 321-357, 2002.
+
+    """
+
+    def __init__(
+            self,
+            is_classification_task=True,
+            k_neighbors=5,
+            random_state=None
+    ):
+        self.is_classification_task = is_classification_task
+        self.k_neighbors = k_neighbors
+        self.random_state = random_state
+
+    def get_name(self):
+        return 'Proportional SMOTE'
+
+    def fit(self, X: pd.DataFrame, y: pd.Series, categorical_columns, ordinal_columns):
+        self._original_column_titles = X.columns
+        self._categorical_column_titles = categorical_columns
+        self._original_target_column_title = y.name
+
+        # calculate the occurences of each class
+        unique, counts = np.unique(y, return_counts=True)
+        self._occurrences_per_class_dict = dict(zip(unique, counts))
+
+        self._X = X.copy()
+        self._y = y.copy()
+
+    def sample(self, n):
+        if n < 1:
+            return pd.DataFrame(), pd.Series()
+
+        # set the amount of samples per class we want to have; includes original samples
+        sampling_strategy = {}
+        for label in self._occurrences_per_class_dict:
+            occurences = self._occurrences_per_class_dict[label]
+            number_of_classes = len(self._occurrences_per_class_dict)
+            number_of_training_samples = len(self._X)
+            sampling_strategy[label] = int(
+                round(float(occurences) + float(n) * (float(occurences) / float(number_of_training_samples)))
+            )
+
+        smote = SMOTE(
+            sampling_strategy=sampling_strategy,
+            k_neighbors=self.k_neighbors,
+            random_state=self.random_state
+        )
+
+        # filter user warning that fires because we do not use SMOTE simply for balancing the dataset
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            X_sampled, y_sampled = smote.fit_resample(self._X, self._y)
+        X_sampled = pd.DataFrame(X_sampled)
+        y_sampled = pd.Series(y_sampled)
+
+        # remove original dataset
+        X_sampled = pd.DataFrame(X_sampled.iloc[len(self._X):, :])
+        X_sampled = X_sampled.reset_index(drop=True)
+        y_sampled = pd.Series(y_sampled.iloc[len(self._y):])
+        y_sampled = y_sampled.reset_index(drop=True)
+
+        X_sampled.columns = self._original_column_titles
+        y_sampled.name = self._original_target_column_title
+
+        # map categorical columns to the closest category through rounding
+        X_sampled[self._categorical_column_titles] = X_sampled[self._categorical_column_titles].round()
+
+        return X_sampled, y_sampled
+
+
 class SMOTEGenerator(BaseEstimator):
     """
     Generator that implements a SMOTE oversampling routine. SMOTE is usually
@@ -595,6 +691,113 @@ class WGANGPGenerator(BaseEstimator):
             return pd.DataFrame(), pd.Series()
 
         sample_data = self._generator.sample(n_samples=n)
+        sample_data.columns = self._column_titles
+
+        # split the generated dataset into data and target
+        X = sample_data.drop(columns=[self._target_column_title])
+        y = sample_data[self._target_column_title]
+
+        return X, y
+
+class ProportionalCWGANGPGenerator(BaseEstimator):
+    def __init__(self,
+                 is_classification_task=True,
+                 noise_dim=264,
+                 layers_dim=128,
+                 batch_size=128,
+                 beta_1=0.5,
+                 beta_2=0.9,
+                 log_step=100,
+                 epochs=300,
+                 learning_rate=1e-4,
+                 n_critic=1,
+                 models_dir='./cache',
+                 ):
+        self.is_classification_task = is_classification_task
+        self.log_step = log_step
+        self.epochs = epochs
+        self.models_dir = models_dir
+        self.n_critic = n_critic
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.noise_dim = noise_dim
+        self.layers_dim = layers_dim
+
+    def get_name(self):
+        return 'Proportional CWGAN-GP'
+
+    def fit(self, X: pd.DataFrame, y: pd.Series, categorical_columns, ordinal_columns):
+        # store the encoded target column name for later use
+        self._target_column_title = y.name
+
+        # split the column titles into categorical and numerical columns
+        categorical_column_titles = categorical_columns.copy()
+        ordinal_column_titles = ordinal_columns.copy()
+
+        # this generator is unsupervised and therefore the target is merged with the dataset
+        train_data = X.copy()
+        train_data[self._target_column_title] = y.copy()
+
+        self._column_titles = train_data.columns
+
+        # column titles need to be in string form
+        train_data.columns = [str(col) for col in train_data.columns]
+        categorical_column_titles = [str(col) for col in categorical_column_titles]
+        ordinal_column_titles = [str(col) for col in ordinal_column_titles]
+
+        # calculate the ratios of each class
+        unique, counts = np.unique(y, return_counts=True)
+        self._label_counts = dict(zip(unique, counts))
+        self._train_size = len(y)
+        self._labels = unique
+
+        model_parameters = ModelParameters(
+            batch_size=self.batch_size,
+            lr=self.learning_rate,
+            betas=(self.beta_1, self.beta_2),
+            noise_dim=self.noise_dim,
+            layers_dim=self.layers_dim
+        )
+
+        self._generator = CWGANGP(
+            model_parameters=model_parameters,
+            num_classes=len(self._labels),
+            n_critic=self.n_critic
+        )
+
+        train_parameters = TrainParameters(
+            epochs=self.epochs,
+            cache_prefix=str(time.time_ns()) + '_',
+            sample_interval=self.log_step,
+            label_dim=-1,
+            labels=unique
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self._generator.train(
+                data=train_data,
+                label_col=str(self._target_column_title),
+                train_arguments=train_parameters,
+                num_cols=ordinal_column_titles,
+                cat_cols=categorical_column_titles
+            )
+
+    def sample(self, n):
+        if n < 1:
+            return pd.DataFrame(), pd.Series()
+
+        subsets = []
+        for label in self._labels:
+            n_samples_for_label = int(
+                round(float(n) * (float(self._label_counts[label]) / float(self._train_size)))
+            )
+            sample_data = self._generator.sample(condition=np.array([label]), n_samples=n_samples_for_label)
+            sample_data = sample_data[:n_samples_for_label]
+            subsets.append(sample_data)
+        sample_data = pd.concat(subsets, axis=0).reset_index(drop=True)
         sample_data.columns = self._column_titles
 
         # split the generated dataset into data and target

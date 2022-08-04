@@ -14,6 +14,7 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, r2_score, mean_absolute_error
 
 from lightgbm import LGBMClassifier, LGBMRegressor
+from lightgbm import early_stopping
 from catboost import CatBoostClassifier, CatBoostRegressor
 
 from experiments.datasets import \
@@ -54,6 +55,12 @@ def join_grids(grids):
     return joined_grid
 
 
+def get_lgbm_scoring(scoring):
+    def lgbm_scoring(y_true, y_pred):
+        return scoring.__name__, scoring(y_true, np.round(y_pred)), True
+    return lgbm_scoring
+
+
 def get_encoder_list(categorical_columns):
     return [
         BinaryEncoder(cols=categorical_columns),
@@ -68,15 +75,53 @@ def get_encoder_list(categorical_columns):
     ]
 
 
+def get_teacher(is_classification_task):
+    if is_classification_task:
+        return (LGBMClassifier(), {
+            'max_depth': [-1, 2, 5, 8],
+            'n_estimators': [10, 25, 50]
+        })
+        # CatBoostClassifier(),
+        #     {
+        #         'depth': [4, 6, 8, 10],
+        #         'iterations': [10, 25, 50]
+        #     }
+    else:
+        return (LGBMRegressor(), {
+            'max_depth': [-1, 2, 5, 8],
+            'n_estimators': [10, 25, 50]
+        })
+
+
+def get_student(is_classification_task, encoder):
+    if is_classification_task:
+        return (DecisionTreeClassifier(), {
+            'max_depth': [3, 4, 5, 6],
+            'criterion': ['gini', 'entropy']
+        }, encoder)
+    else:
+        return (DecisionTreeRegressor(), {
+            'max_depth': [3, 4, 5, 6],
+            'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
+        }, encoder)
+
 def get_generator_list(is_classification_task):
+    # the weight decay
+    default_l2_scales = [1e-5, 1e-4, 1e-3] # default 1e-5, 1e-3
+    # the learning rate
+    default_learning_rates = [1e-4, 5e-4, 1e-3] # default 1e-4
+    default_generator_learning_rates = default_learning_rates.copy() # default 2e-4
+    default_discriminator_learning_rates = default_learning_rates.copy() # default 2e-4
+    # how many samples are trained with in each training step
     default_batch_sizes = [10, 20, 50]
-    default_epochs = [10]
+    # how many times the entire dataset is passed through
+    default_epochs = [100]
 
     generator_list = [
         (PrivBNGenerator(is_classification_task=is_classification_task), {
             # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
             # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
-            'theta': [10, 15, 20, 30]
+            'theta': [15, 20, 30] # default 20
         }),
         (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
             'default_distribution': [  # default 'parametric'
@@ -90,50 +135,62 @@ def get_generator_list(is_classification_task):
         }),
         (TableGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs  # default 300
+            'epochs': default_epochs,  # default 300
+            'l2scale': default_l2_scales
         }),
         (CTGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs  # default 300
+            'epochs': default_epochs,  # default 300
+            'generator_lr': default_generator_learning_rates,
+            'discriminator_lr': default_discriminator_learning_rates
         }),
         (CopulaGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs  # default 300
+            'epochs': default_epochs,  # default 300
+            'generator_lr': default_generator_learning_rates,
+            'discriminator_lr': default_discriminator_learning_rates
         }),
         (TVAEGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs  # default 300
+            'epochs': default_epochs,  # default 300
+            'l2scale': default_l2_scales
         }),
         (MedGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 1000
-            'epochs': default_epochs  # default 2000
+            'epochs': default_epochs,  # default 2000
+            'l2scale': default_l2_scales
         }),
         (DPCTGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs  # default 300
+            'epochs': default_epochs,  # default 300
+            'generator_lr': default_generator_learning_rates,
+            'discriminator_lr': default_discriminator_learning_rates
         }),
-        (CTABGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs  # default 1
-        })
+        # (CTABGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': default_batch_sizes,  # default 500
+        #     'epochs': default_epochs,  # default 1
+        #     'l2scale': default_l2_scales
+        # })
     ]
     if is_classification_task:
         generator_list.append(
-            (SMOTEGenerator(is_classification_task=is_classification_task), {
+            (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
                 'k_neighbors': [4, 5, 6, 7]  # default 5
             })
         )
         generator_list.append(
-            (CWGANGPGenerator(is_classification_task=is_classification_task), {
+            (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
                 'batch_size': default_batch_sizes,  # default 128
-                'epochs': default_epochs  # default 300
+                'epochs': default_epochs,  # default 300
+                'learning_rate': default_learning_rates
             }),
         )
     else:
         generator_list.append(
             (WGANGPGenerator(is_classification_task=is_classification_task), {
                 'batch_size': default_batch_sizes,  # default 128
-                'epochs': default_epochs  # default 300
+                'epochs': default_epochs,  # default 300
+                'learning_rate': default_learning_rates
             }),
         )
     return generator_list
@@ -161,6 +218,7 @@ def get_metric_list(dataset_task):
 
 
 def tune_teacher(
+        is_classification_task,
         dataset,
         encoder,
         scaler,
@@ -251,7 +309,26 @@ def tune_teacher(
     )
 
     try:
-        tuned_teacher.fit(X=X_train.copy(), y=y_train.copy(), cat_features=categorical_columns)
+        # if is_classification_task:
+        #     X_train_train, X_train_validation, y_train_train, y_train_validation = train_test_split(
+        #         X_train, y_train, test_size=0.1, stratify=y_train
+        #     )
+        # else:
+        #     X_train_train, X_train_validation, y_train_train, y_train_validation = train_test_split(
+        #         X_train, y_train, test_size=0.1
+        #     )
+
+        tuned_teacher.fit(
+            X=X_train.copy(),
+            y=y_train.copy(),
+            categorical_feature=categorical_columns,
+            # X=X_train_train,
+            # y=y_train_train,
+            # categorical_feature=categorical_columns,
+            # eval_set=[(X_train_validation, y_train_validation)],
+            # eval_metric=get_lgbm_scoring(metric_function),
+            # callbacks=[early_stopping(50)]
+        )
 
         teacher_tuning_time = timeit.default_timer() - teacher_tuning_start_time
 
@@ -269,6 +346,9 @@ def tune_teacher(
             'random_state': [str(random_state)],
             'run_time': [str(teacher_tuning_time)]
         })
+
+        # replace gridsearch instance with the tuned teacher
+        tuned_teacher = tuned_teacher.best_estimator_
     except Exception as e:
         tuned_teacher = None
         result = {
@@ -276,7 +356,7 @@ def tune_teacher(
             'traceback': traceback.format_exc()
         }
     finally:
-        return type(encoder).__name__, tuned_teacher.best_estimator_, result
+        return type(encoder).__name__, tuned_teacher, result
 
 
 def tune_student(
@@ -383,29 +463,73 @@ def tune_student(
         X_train[categorical_columns] = X_train[categorical_columns].astype(int)
         X_test[categorical_columns] = X_test[categorical_columns].astype(int)
 
-        # tune the generator/student
-        if encoder is None:
-            # because our dataset is not completely numerical, we apply the encoder submitted with the student if needed
-            augmented_student = AugmentedEstimation(
-                generator=generator,
-                estimator=student,
-                n_samples=train_size,
-                categorical_columns=categorical_columns,
-                ordinal_columns=ordinal_columns,
-                encoder=student_encoder
+        # handle student with no augmentation
+        if 0 in n_samples_list:
+            n_samples_list = n_samples_list.copy()
+            n_samples_list.remove(0)
+
+        student_tuning_start_time = timeit.default_timer()
+
+        tuned_student = GridSearchCV(
+            estimator=student,
+            param_grid=student_grid,
+            scoring=metric_name,
+            error_score="raise",
+            refit=True,
+            cv=cv,
+            verbose=verbose
+        )
+
+        if student_encoder is not None and categorical_columns:
+            tuned_student.fit(student_encoder.fit_transform(X_train), y_train)
+
+            student_tuning_time = timeit.default_timer() - student_tuning_start_time
+
+            performance = metric_function(
+                y_test,
+                tuned_student.predict(student_encoder.transform(X_test)),
+                **metric_parameters
             )
         else:
-            augmented_student = AugmentedEstimation(
-                generator=generator,
-                estimator=student,
-                n_samples=train_size,
-                categorical_columns=categorical_columns,
-                ordinal_columns=ordinal_columns
+            tuned_student.fit(X_train, y_train)
+
+            student_tuning_time = timeit.default_timer() - student_tuning_start_time
+
+            performance = metric_function(
+                y_test,
+                tuned_student.predict(X_test),
+                **metric_parameters
             )
+
+        result = {
+            'dataset': dataset_name,
+            'encoder': type(encoder).__name__,
+            'scaler': type(scaler).__name__,
+            'student': type(student).__name__,
+            'student_encoder': type(student_encoder).__name__,
+            'optimization_metric': metric_name,
+            'performance': str(performance),
+            'train_size': str(train_size),
+            'test_size': str(test_size),
+            'random_state': str(random_state),
+            'run_time': str(student_tuning_time)
+        }
+
+        result_frame = result_frame.append(result, ignore_index=True)
+
+        # tune the generator
+        augmented_student = AugmentedEstimation(
+            generator=generator,
+            estimator=student,
+            n_samples=train_size,
+            categorical_columns=categorical_columns,
+            ordinal_columns=ordinal_columns,
+            encoder=student_encoder
+        )
 
         tuned_augmented_student = GridSearchCV(
             estimator=augmented_student,
-            param_grid=join_grids([('generator', generator_grid), ('estimator', student_grid)]),
+            param_grid=join_grids([('generator', generator_grid)]),
             scoring=metric_name,
             error_score="raise",
             refit=True,
@@ -424,7 +548,6 @@ def tune_student(
         )
 
         tuned_generator = tuned_augmented_student.best_estimator_.get_generator()
-        tuned_student = tuned_augmented_student.best_estimator_.get_estimator()
 
         generator_sampling_start_time = timeit.default_timer()
 
@@ -495,7 +618,7 @@ def tune_student(
             'test_size': str(test_size),
             'random_state': str(random_state),
             'run_time': str(
-                generator_tuning_time + generator_sampling_time
+                student_tuning_time + generator_tuning_time + generator_sampling_time
             )
         }
 
@@ -547,7 +670,8 @@ def tune_student(
             'test_size': str(test_size),
             'random_state': str(random_state),
             'run_time': str(
-                generator_tuning_time + generator_sampling_time + teacher_relabelling_time + student_fitting_time
+                student_tuning_time + generator_tuning_time
+                + generator_sampling_time + teacher_relabelling_time + student_fitting_time
             )
         }
 
@@ -557,51 +681,6 @@ def tune_student(
         if train_size in n_samples_list:
             n_samples_list = n_samples_list.copy()
             n_samples_list.remove(train_size)
-
-        # handle student with no augmentation
-        if 0 in n_samples_list:
-            n_samples_list = n_samples_list.copy()
-            n_samples_list.remove(0)
-
-            student_fitting_start_time = timeit.default_timer()
-
-            if student_encoder is not None and categorical_columns:
-                tuned_student.fit(student_encoder.fit_transform(X_train), y_train)
-
-                student_fitting_time = timeit.default_timer() - student_fitting_start_time
-
-                performance = metric_function(
-                    y_test,
-                    tuned_student.predict(student_encoder.transform(X_test)),
-                    **metric_parameters
-                )
-            else:
-                tuned_student.fit(X_train, y_train)
-
-                student_fitting_time = timeit.default_timer() - student_fitting_start_time
-
-                performance = metric_function(
-                    y_test,
-                    tuned_student.predict(X_test),
-                    **metric_parameters
-                )
-
-            result = {
-                'dataset': dataset_name,
-                'encoder': type(encoder).__name__,
-                'scaler': type(scaler).__name__,
-                'student': type(student).__name__,
-                'student_encoder': type(student_encoder).__name__,
-                'optimization_metric': metric_name,
-                'performance': str(performance),
-                'n_samples': str(0),
-                'train_size': str(train_size),
-                'test_size': str(test_size),
-                'random_state': str(random_state),
-                'run_time': str(student_fitting_time)
-            }
-
-            result_frame = result_frame.append(result, ignore_index=True)
 
         max_n_samples_generation_start_time = timeit.default_timer()
 
@@ -661,7 +740,7 @@ def tune_student(
                 'test_size': str(test_size),
                 'random_state': str(random_state),
                 'run_time': str(
-                    generator_tuning_time + int(
+                    student_tuning_time + generator_tuning_time + int(
                         float(max_n_samples_generation_time) * (float(n_samples) / float(max(n_samples_list)))
                     ) + student_fitting_time
                 )
@@ -715,7 +794,7 @@ def tune_student(
                 'test_size': str(test_size),
                 'random_state': str(random_state),
                 'run_time': str(
-                    generator_tuning_time + int(
+                    student_tuning_time + generator_tuning_time + int(
                         float(max_n_samples_generation_time) * (float(n_samples) / float(max(n_samples_list)))
                     ) + teacher_relabelling_time + student_fitting_time
                 )
@@ -783,6 +862,7 @@ def parallelized_run(
                 verbose=verbose
             )(
                 delayed(tune_teacher)(
+                    is_classification_task=is_classification_task,
                     dataset=(dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns),
                     encoder=encoder,
                     scaler=scaler,
@@ -892,25 +972,18 @@ def test_parallelized_run():
     encoder_list = get_encoder_list(categorical_columns=categorical_columns)
     scaler = RobustScaler()
     generator_list = get_generator_list(is_classification_task=is_classification_task)
-    student = (
-        DecisionTreeClassifier(),
-        {
-            'max_depth': [7]
-        },
-        BinaryEncoder(cols=categorical_columns)
+    student = get_student(
+        is_classification_task=is_classification_task,
+        encoder=BinaryEncoder(cols=categorical_columns)
     )
-    teacher = (
-        CatBoostClassifier(),
-        {
-            'depth': [4, 6, 8, 10],
-            'iterations': [10, 25, 50]
-        }
+    teacher = get_teacher(
+        is_classification_task=is_classification_task
     )
     metric_list = get_metric_list(dataset_task)
-    cv = 2
+    cv = 5
     train_size = 500
-    # n_samples_list = [0, 500, 1000, 2000, 5000, 7500, 10000]
-    n_samples_list = [0, 500, 1000]
+    n_samples_list = [0, 500, 1000, 2000, 5000, 7500, 10000]
+    # n_samples_list = [0, 500, 1000]
     random_state_list = [1]
     verbose = 1
 
