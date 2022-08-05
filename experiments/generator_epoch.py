@@ -193,6 +193,7 @@ def evaluate_generator(
         generator_tuning_start_time = timeit.default_timer()
 
         generator.epochs = epoch
+        generator.batch_size = 50
         generator.fit(X_train, y_train, categorical_columns, ordinal_columns)
         X_sampled, y_sampled = generator.sample(len(X_train))
 
@@ -386,55 +387,132 @@ def visualize_experiments(experiment_directory, experiment_basename, repeat_visu
 
                 results = pd.read_csv(csv_file)
 
-                processed_results = results[
-                    ['generator', 'student', 'epochs', 'optimization_metric', 'performance', 'run_time']
-                ].groupby(['generator', 'student', 'optimization_metric', 'epochs'], as_index=False).mean()
+                aggregated = False
 
                 absolute_results_directory_path = os.path.join(absolute_directory_path, 'results')
                 Path(absolute_results_directory_path).mkdir(parents=True, exist_ok=True)
-                processed_results.to_csv(
-                    os.path.join(
-                        absolute_results_directory_path,
-                        os.path.basename(absolute_directory_path) + '_processed.csv'
-                    ), index=False
-                )
 
-                for (generator, metric), processed_results_per_metric in processed_results.groupby(['generator', 'optimization_metric'], as_index=False):
+                if aggregated:
+                    processed_results = results[
+                        ['generator', 'student', 'epochs', 'optimization_metric', 'performance', 'run_time']
+                    ].groupby(['generator', 'student', 'optimization_metric', 'epochs'], as_index=False).mean()
 
-                    for x, y in [('epochs', 'performance'), ('epochs', 'run_time')]:
+                    processed_results.to_csv(
+                        os.path.join(
+                            absolute_results_directory_path,
+                            os.path.basename(absolute_directory_path) + '_processed.csv'
+                        ), index=False
+                    )
 
-                        sns.lineplot(
-                            x=processed_results_per_metric[x],
-                            y=processed_results_per_metric[y],
-                            marker='o'
-                        )
-                        plt.title(generator + '_' + metric + ' ' + x + '_' + y)
-
-                        file_name = generator + '_' + metric+ ' ' + x + '_' + y + '.png'
-                        plt.savefig(os.path.join(absolute_results_directory_path, file_name))
-
-                        plt.clf()
-
-                if len(processed_results['generator'].value_counts()) > 1:
-
-                    for metric, processed_results_per_metric in processed_results.groupby(['optimization_metric'], as_index=False):
+                    for (generator, metric), processed_results_per_metric in processed_results.groupby(['generator', 'optimization_metric'], as_index=False):
 
                         for x, y in [('epochs', 'performance'), ('epochs', 'run_time')]:
 
                             sns.lineplot(
-                                data=processed_results_per_metric,
-                                x=x,
-                                y=y,
-                                hue='generator',
+                                x=processed_results_per_metric[x],
+                                y=processed_results_per_metric[y],
                                 marker='o'
                             )
-                            plt.title(metric + ' ' + x + '_' + y)
+                            plt.title(generator + '_' + metric + ' ' + x + '_' + y)
 
-                            file_name = metric + ' ' + x + '_' + y + '.png'
+                            file_name = generator + '_' + metric+ ' ' + x + '_' + y + '_aggregated.png'
                             plt.savefig(os.path.join(absolute_results_directory_path, file_name))
 
                             plt.clf()
 
+                    if len(processed_results['generator'].value_counts()) > 1:
+
+                        for metric, processed_results_per_metric in processed_results.groupby(['optimization_metric'], as_index=False):
+
+                            for x, y in [('epochs', 'performance'), ('epochs', 'run_time')]:
+                                sns.lineplot(
+                                    data=processed_results_per_metric,
+                                    x=x,
+                                    y=y,
+                                    hue='generator',
+                                    marker='o'
+                                )
+                                plt.title(metric + ' ' + x + '_' + y)
+
+                                file_name = metric + ' ' + x + '_' + y + '_aggregated.png'
+                                plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+
+                                plt.clf()
+
+                                # plot graph without legend
+                                ax = sns.lineplot(
+                                    data=processed_results_per_metric,
+                                    x=x,
+                                    y=y,
+                                    hue='generator',
+                                    marker='o'
+                                )
+                                ax.get_legend().remove()
+                                plt.title(metric + ' ' + x + '_' + y)
+
+                                file_name = metric + ' ' + x + '_' + y + '_no_legend_aggregated.png'
+                                plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+
+                                plt.clf()
+                else:
+                    processed_results = results[
+                        ['generator', 'student', 'epochs', 'optimization_metric', 'performance', 'run_time']
+                    ]
+
+                    for (generator, metric), processed_results_per_metric in processed_results.groupby(['generator', 'optimization_metric'], as_index=False):
+
+                        for x, y in [('epochs', 'performance'), ('epochs', 'run_time')]:
+
+                            sns.lineplot(
+                                x=processed_results_per_metric[x],
+                                y=processed_results_per_metric[y],
+                                marker='o'
+                            )
+                            plt.title(generator + '_' + metric + ' ' + x + '_' + y)
+
+                            file_name = generator + '_' + metric+ ' ' + x + '_' + y + '.png'
+                            plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+
+                            plt.clf()
+
+                    if len(processed_results['generator'].value_counts()) > 1:
+
+                        for metric, processed_results_per_metric in processed_results.groupby(['optimization_metric'], as_index=False):
+
+                            for other in ['performance', 'run_time']:
+                                new_processed_results = processed_results_per_metric[
+                                    ['generator', 'epochs', other]
+                                ]
+
+                                sns.relplot(
+                                    data=new_processed_results,
+                                    x='epochs',
+                                    y=other,
+                                    col='generator',
+                                    kind='line',
+                                    col_wrap=4
+                                )
+
+                                file_name = metric + '_' + other + '.png'
+                                plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+
+                                plt.clf()
+
+                                # # plot graph without legend
+                                # ax = sns.lineplot(
+                                #     data=processed_results_per_metric,
+                                #     x=x,
+                                #     y=y,
+                                #     hue='generator',
+                                #     marker='o'
+                                # )
+                                # ax.get_legend().remove()
+                                # plt.title(metric + ' ' + x + '_' + y)
+                                #
+                                # file_name = metric + ' ' + x + '_' + y + '_no_legend.png'
+                                # plt.savefig(os.path.join(absolute_results_directory_path, file_name))
+                                #
+                                # plt.clf()
 
 def find_files_of_type(absolute_directory_path, filetype):
     filenames = os.listdir(absolute_directory_path)
@@ -464,7 +542,7 @@ if __name__ == '__main__':
             scaler = RobustScaler()
             generator_list = get_generator_list(is_classification_task)
             student = get_student(is_classification_task, BinaryEncoder(categorical_columns))
-            epoch_list = range(0, 100, 5)
+            epoch_list = [25, 50, 75, 100, 125, 150, 175, 200]
             metric_list = get_metric_list(dataset_task)
             train_size = 500
             random_state_list = [1, 2, 3, 4, 5]
