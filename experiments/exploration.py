@@ -501,6 +501,8 @@ def tune_student(
                 **metric_parameters
             )
 
+        tuned_student = tuned_student.best_estimator_
+
         result = {
             'dataset': dataset_name,
             'encoder': type(encoder).__name__,
@@ -520,7 +522,7 @@ def tune_student(
         # tune the generator
         augmented_student = AugmentedEstimation(
             generator=generator,
-            estimator=student,
+            estimator=tuned_student,
             n_samples=train_size,
             categorical_columns=categorical_columns,
             ordinal_columns=ordinal_columns,
