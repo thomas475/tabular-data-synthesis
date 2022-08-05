@@ -136,35 +136,35 @@ def get_generator_list(is_classification_task):
         (TableGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
             'epochs': default_epochs,  # default 300
-            'l2scale': default_l2_scales
+            # 'l2scale': default_l2_scales
         }),
         (CTGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
             'epochs': default_epochs,  # default 300
-            'generator_lr': default_generator_learning_rates,
-            'discriminator_lr': default_discriminator_learning_rates
+            # 'generator_lr': default_generator_learning_rates,
+            # 'discriminator_lr': default_discriminator_learning_rates
         }),
         (CopulaGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
             'epochs': default_epochs,  # default 300
-            'generator_lr': default_generator_learning_rates,
-            'discriminator_lr': default_discriminator_learning_rates
+            # 'generator_lr': default_generator_learning_rates,
+            # 'discriminator_lr': default_discriminator_learning_rates
         }),
         (TVAEGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
             'epochs': default_epochs,  # default 300
-            'l2scale': default_l2_scales
+            # 'l2scale': default_l2_scales
         }),
         (MedGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 1000
             'epochs': default_epochs,  # default 2000
-            'l2scale': default_l2_scales
+            # 'l2scale': default_l2_scales
         }),
         (DPCTGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
             'epochs': default_epochs,  # default 300
-            'generator_lr': default_generator_learning_rates,
-            'discriminator_lr': default_discriminator_learning_rates
+            # 'generator_lr': default_generator_learning_rates,
+            # 'discriminator_lr': default_discriminator_learning_rates
         }),
         # (CTABGANGenerator(is_classification_task=is_classification_task), {
         #     'batch_size': default_batch_sizes,  # default 500
@@ -182,7 +182,7 @@ def get_generator_list(is_classification_task):
             (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
                 'batch_size': default_batch_sizes,  # default 128
                 'epochs': default_epochs,  # default 300
-                'learning_rate': default_learning_rates
+                # 'learning_rate': default_learning_rates
             }),
         )
     else:
@@ -190,7 +190,7 @@ def get_generator_list(is_classification_task):
             (WGANGPGenerator(is_classification_task=is_classification_task), {
                 'batch_size': default_batch_sizes,  # default 128
                 'epochs': default_epochs,  # default 300
-                'learning_rate': default_learning_rates
+                # 'learning_rate': default_learning_rates
             }),
         )
     return generator_list
