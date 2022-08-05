@@ -123,6 +123,7 @@ def get_student(is_classification_task, encoder):
             'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
         }, encoder)
 
+
 def get_generator_list(is_classification_task):
     # the weight decay
     default_l2_scales = [1e-5, 1e-4, 1e-3] # default 1e-5, 1e-3
@@ -133,7 +134,7 @@ def get_generator_list(is_classification_task):
     # how many samples are trained with in each training step
     default_batch_sizes = [10, 20, 50]
     # how many times the entire dataset is passed through
-    default_epochs = [100]
+    default_epochs = [50]
 
     generator_list = [
         (PrivBNGenerator(is_classification_task=is_classification_task), {
@@ -184,11 +185,11 @@ def get_generator_list(is_classification_task):
             # 'generator_lr': default_generator_learning_rates,
             # 'discriminator_lr': default_discriminator_learning_rates
         }),
-        # (CTABGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs,  # default 1
-        #     'l2scale': default_l2_scales
-        # })
+        (CTABGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [10],  # default 1
+            # 'l2scale': default_l2_scales
+        })
     ]
     if is_classification_task:
         generator_list.append(
@@ -992,7 +993,7 @@ def test_parallelized_run():
     ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
 
     experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
-    experiment_basename = 'test'
+    experiment_basename = 'exploration'
     is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
     encoder_list = get_encoder_list(categorical_columns=categorical_columns)
     scaler = RobustScaler()
