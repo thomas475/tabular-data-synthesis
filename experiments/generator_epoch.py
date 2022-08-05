@@ -252,7 +252,7 @@ def test_generator(
 
     dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = dataset
 
-    processed_datasets = []
+    processed_datasets = {}
     for random_state in random_state_list:
 
         tf.random.set_seed(random_state)
@@ -292,10 +292,10 @@ def test_generator(
         y_test = y_test.copy()
         y_test.name = len(ordinal_columns)
 
-        processed_datasets.append((dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns))
+        processed_datasets[random_state] = (dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns)
 
     generator_permutations = itertools.product(
-        processed_datasets, generator_list, epoch_list, metric_list
+        generator_list, epoch_list, metric_list, random_state_list
     )
 
     generator_results = Parallel(
@@ -303,7 +303,7 @@ def test_generator(
         verbose=verbose
     )(
         delayed(evaluate_generator)(
-            dataset=dataset,
+            dataset=processed_datasets[random_state],
             generator=generator,
             student=student,
             epoch=epoch,
@@ -311,10 +311,10 @@ def test_generator(
             random_state=random_state
         )
         for index, (
-            dataset,
             generator,
             epoch,
-            metric
+            metric,
+            random_state
         ) in enumerate(generator_permutations)
     )
 
