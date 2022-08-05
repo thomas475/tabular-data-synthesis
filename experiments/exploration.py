@@ -46,6 +46,24 @@ import timeit
 
 import warnings
 
+import signal
+from contextlib import contextmanager
+
+
+class TimeoutException(Exception): pass
+
+
+@contextmanager
+def time_limit(seconds):
+    def signal_handler(signum, frame):
+        raise TimeoutException('Execution took longer than ' + str(seconds) + ' seconds.')
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+
 
 def join_grids(grids):
     joined_grid = {}
@@ -63,15 +81,15 @@ def get_lgbm_scoring(scoring):
 
 def get_encoder_list(categorical_columns):
     return [
-        BinaryEncoder(cols=categorical_columns),
-        CatBoostEncoder(cols=categorical_columns),
-        CollapseEncoder(cols=categorical_columns),
-        CountEncoder(cols=categorical_columns),
-        GLMMEncoder(cols=categorical_columns),
-        CV5GLMMEncoder(cols=categorical_columns),
+        # BinaryEncoder(cols=categorical_columns),
+        # CatBoostEncoder(cols=categorical_columns),
+        # CollapseEncoder(cols=categorical_columns),
+        # CountEncoder(cols=categorical_columns),
+        # GLMMEncoder(cols=categorical_columns),
+        # CV5GLMMEncoder(cols=categorical_columns),
         OneHotEncoder(cols=categorical_columns),
-        TargetEncoder(cols=categorical_columns),
-        CV5TargetEncoder(cols=categorical_columns),
+        # TargetEncoder(cols=categorical_columns),
+        # CV5TargetEncoder(cols=categorical_columns),
     ]
 
 
@@ -118,81 +136,81 @@ def get_generator_list(is_classification_task):
     default_epochs = [100]
 
     generator_list = [
-        (PrivBNGenerator(is_classification_task=is_classification_task), {
-            # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
-            # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
-            'theta': [15, 20, 30] # default 20
-        }),
-        (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
-            'default_distribution': [  # default 'parametric'
-                'univariate',
-                # Let ``copulas`` select the optimal univariate distribution. This may result in non-parametric models being used.
-                'parametric',
-                # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to parametric distributions only.
-                'bounded',
-                # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to bounded distributions only.
-            ]
-        }),
+        # (PrivBNGenerator(is_classification_task=is_classification_task), {
+        #     # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
+        #     # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
+        #     'theta': [15, 20, 30] # default 20
+        # }),
+        # (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
+        #     'default_distribution': [  # default 'parametric'
+        #         'univariate',
+        #         # Let ``copulas`` select the optimal univariate distribution. This may result in non-parametric models being used.
+        #         'parametric',
+        #         # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to parametric distributions only.
+        #         'bounded',
+        #         # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to bounded distributions only.
+        #     ]
+        # }),
         (TableGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
             'epochs': default_epochs,  # default 300
             # 'l2scale': default_l2_scales
         }),
-        (CTGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
-            # 'generator_lr': default_generator_learning_rates,
-            # 'discriminator_lr': default_discriminator_learning_rates
-        }),
-        (CopulaGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
-            # 'generator_lr': default_generator_learning_rates,
-            # 'discriminator_lr': default_discriminator_learning_rates
-        }),
-        (TVAEGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
-            # 'l2scale': default_l2_scales
-        }),
-        (MedGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 1000
-            'epochs': default_epochs,  # default 2000
-            # 'l2scale': default_l2_scales
-        }),
-        (DPCTGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
-            # 'generator_lr': default_generator_learning_rates,
-            # 'discriminator_lr': default_discriminator_learning_rates
-        }),
-        # (CTABGANGenerator(is_classification_task=is_classification_task), {
-        #     'batch_size': default_batch_sizes,  # default 500
-        #     'epochs': default_epochs,  # default 1
-        #     'l2scale': default_l2_scales
-        # })
+    #     (CTGANGenerator(is_classification_task=is_classification_task), {
+    #         'batch_size': default_batch_sizes,  # default 500
+    #         'epochs': default_epochs,  # default 300
+    #         # 'generator_lr': default_generator_learning_rates,
+    #         # 'discriminator_lr': default_discriminator_learning_rates
+    #     }),
+    #     (CopulaGANGenerator(is_classification_task=is_classification_task), {
+    #         'batch_size': default_batch_sizes,  # default 500
+    #         'epochs': default_epochs,  # default 300
+    #         # 'generator_lr': default_generator_learning_rates,
+    #         # 'discriminator_lr': default_discriminator_learning_rates
+    #     }),
+    #     (TVAEGenerator(is_classification_task=is_classification_task), {
+    #         'batch_size': default_batch_sizes,  # default 500
+    #         'epochs': default_epochs,  # default 300
+    #         # 'l2scale': default_l2_scales
+    #     }),
+    #     (MedGANGenerator(is_classification_task=is_classification_task), {
+    #         'batch_size': default_batch_sizes,  # default 1000
+    #         'epochs': default_epochs,  # default 2000
+    #         # 'l2scale': default_l2_scales
+    #     }),
+    #     (DPCTGANGenerator(is_classification_task=is_classification_task), {
+    #         'batch_size': default_batch_sizes,  # default 500
+    #         'epochs': default_epochs,  # default 300
+    #         # 'generator_lr': default_generator_learning_rates,
+    #         # 'discriminator_lr': default_discriminator_learning_rates
+    #     }),
+    #     # (CTABGANGenerator(is_classification_task=is_classification_task), {
+    #     #     'batch_size': default_batch_sizes,  # default 500
+    #     #     'epochs': default_epochs,  # default 1
+    #     #     'l2scale': default_l2_scales
+    #     # })
     ]
-    if is_classification_task:
-        generator_list.append(
-            (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
-                'k_neighbors': [4, 5, 6, 7]  # default 5
-            })
-        )
-        generator_list.append(
-            (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
-                'batch_size': default_batch_sizes,  # default 128
-                'epochs': default_epochs,  # default 300
-                # 'learning_rate': default_learning_rates
-            }),
-        )
-    else:
-        generator_list.append(
-            (WGANGPGenerator(is_classification_task=is_classification_task), {
-                'batch_size': default_batch_sizes,  # default 128
-                'epochs': default_epochs,  # default 300
-                # 'learning_rate': default_learning_rates
-            }),
-        )
+    # if is_classification_task:
+    #     generator_list.append(
+    #         (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
+    #             'k_neighbors': [4, 5, 6, 7]  # default 5
+    #         })
+    #     )
+    #     generator_list.append(
+    #         (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
+    #             'batch_size': default_batch_sizes,  # default 128
+    #             'epochs': default_epochs,  # default 300
+    #             # 'learning_rate': default_learning_rates
+    #         }),
+    #     )
+    # else:
+    #     generator_list.append(
+    #         (WGANGPGenerator(is_classification_task=is_classification_task), {
+    #             'batch_size': default_batch_sizes,  # default 128
+    #             'epochs': default_epochs,  # default 300
+    #             # 'learning_rate': default_learning_rates
+    #         }),
+    #     )
     return generator_list
 
 
@@ -371,7 +389,8 @@ def tune_student(
         cv,
         n_samples_list,
         random_state,
-        verbose
+        verbose,
+        timeout
 ):
     if type(encoder).__name__ not in tuned_teacher_dict:
         result_frame = {
@@ -538,7 +557,9 @@ def tune_student(
             cv=ShuffleSplit(test_size=0.20, n_splits=1),
             verbose=verbose
         )
-        tuned_augmented_student.fit(X=X_train.copy(), y=y_train.copy())
+
+        with time_limit(timeout):
+            tuned_augmented_student.fit(X=X_train.copy(), y=y_train.copy())
 
         generator_tuning_time = timeit.default_timer() - generator_tuning_start_time
 
@@ -829,7 +850,8 @@ def parallelized_run(
         train_size,
         n_samples_list,
         random_state_list,
-        verbose
+        verbose,
+        generator_timeout
 ):
     total_run_start_time = timeit.default_timer()
 
@@ -918,7 +940,8 @@ def parallelized_run(
                     cv=cv,
                     n_samples_list=n_samples_list,
                     random_state=random_state,
-                    verbose=verbose
+                    verbose=verbose,
+                    timeout=generator_timeout
                 )
                 for (
                     index, (
@@ -988,6 +1011,7 @@ def test_parallelized_run():
     # n_samples_list = [0, 500, 1000]
     random_state_list = [1]
     verbose = 1
+    generator_timeout = 1
 
     parallelized_run(
         experiment_directory=experiment_directory,
@@ -1004,7 +1028,8 @@ def test_parallelized_run():
         train_size=train_size,
         n_samples_list=n_samples_list,
         random_state_list=random_state_list,
-        verbose=verbose
+        verbose=verbose,
+        generator_timeout=generator_timeout
     )
 
 
