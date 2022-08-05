@@ -1011,8 +1011,11 @@ def test_parallelized_run():
     n_samples_list = [0, 500, 1000, 2000, 5000, 7500, 10000]
     # n_samples_list = [0, 500, 1000]
     random_state_list = [1]
-    verbose = 1
+    verbose = 100
     generator_timeout = 1000
+
+    # add used random_states to experiment name
+    experiment_basename = experiment_basename + '_' + '_'.join([str(random_state) for random_state in random_state_list])
 
     parallelized_run(
         experiment_directory=experiment_directory,
