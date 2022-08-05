@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 import tensorflow as tf
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, ShuffleSplit
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import RobustScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -533,7 +533,7 @@ def tune_student(
             scoring=metric_name,
             error_score="raise",
             refit=True,
-            cv=cv,
+            cv=ShuffleSplit(test_size=0.20, n_splits=1),
             verbose=verbose
         )
         tuned_augmented_student.fit(X=X_train.copy(), y=y_train.copy())
