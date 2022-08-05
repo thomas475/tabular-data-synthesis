@@ -292,44 +292,41 @@ def test_generator(
         y_test = y_test.copy()
         y_test.name = len(ordinal_columns)
 
-        processed_datasets[random_state] = (dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns)
-
-    generator_permutations = itertools.product(
-        generator_list, epoch_list, metric_list, random_state_list
-    )
-
-    generator_results = Parallel(
-        n_jobs=-1,
-        verbose=verbose
-    )(
-        delayed(evaluate_generator)(
-            dataset=processed_datasets[random_state],
-            generator=generator,
-            student=student,
-            epoch=epoch,
-            metric=metric,
-            random_state=random_state
+        generator_permutations = itertools.product(
+            generator_list, epoch_list, metric_list
         )
-        for index, (
-            generator,
-            epoch,
-            metric,
-            random_state
-        ) in enumerate(generator_permutations)
-    )
 
-    for result in generator_results:
-        if isinstance(result, dict):
-            log_message = 'There has been an error with evaluating the generator ' + str(result['generator']) \
-                          + ' for epoch ' + str(result['epochs']) + ' with randomstate ' + str(random_state) + ':' \
-                          + '\n' + result['exception'] \
-                          + '\n' + result['traceback']
-        else:
-            results = results.append(result, ignore_index=True).reset_index(drop=True)
-            result = result.to_dict()
-            log_message = 'Evaluating the generator ' + str(result['generator']) + ' for epoch ' + str(result['epochs']) \
-                          + ' with randomstate ' + str(random_state) + ' was successful.'
-        log_messages.append(log_message)
+        generator_results = Parallel(
+            n_jobs=-1,
+            verbose=verbose
+        )(
+            delayed(evaluate_generator)(
+                dataset=(dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns),
+                generator=generator,
+                student=student,
+                epoch=epoch,
+                metric=metric,
+                random_state=random_state
+            )
+            for index, (
+                generator,
+                epoch,
+                metric
+            ) in enumerate(generator_permutations)
+        )
+
+        for result in generator_results:
+            if isinstance(result, dict):
+                log_message = 'There has been an error with evaluating the generator ' + str(result['generator']) \
+                              + ' for epoch ' + str(result['epochs']) + ' with randomstate ' + str(random_state) + ':' \
+                              + '\n' + result['exception'] \
+                              + '\n' + result['traceback']
+            else:
+                results = results.append(result, ignore_index=True).reset_index(drop=True)
+                result = result.to_dict()
+                log_message = 'Evaluating the generator ' + str(result['generator']) + ' for epoch ' + str(result['epochs']) \
+                              + ' with randomstate ' + str(random_state) + ' was successful.'
+            log_messages.append(log_message)
 
     total_run_time = timeit.default_timer() - total_run_start_time
     total_time_message = 'The total runtime was ' + str(round(total_run_time, 4)) + ' seconds (' \
