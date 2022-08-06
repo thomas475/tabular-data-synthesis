@@ -224,7 +224,9 @@ def evaluate_generator(
     except Exception as e:
         result_frame = {
             'exception': str(e),
-            'traceback': traceback.format_exc()
+            'traceback': traceback.format_exc(),
+            'generator': type(generator).__name__,
+            'batch_size': str(batch_size)
         }
     finally:
         return result_frame
