@@ -134,7 +134,7 @@ def get_generator_list(is_classification_task):
     # how many samples are trained with in each training step
     default_batch_sizes = [10, 20, 50]
     # how many times the entire dataset is passed through
-    default_epochs = [50]
+    default_epochs = [300]
 
     generator_list = [
         (PrivBNGenerator(is_classification_task=is_classification_task), {

@@ -47,4 +47,29 @@ def run():
         print(sampled_counts)
         print(original_counts.compare(sampled_counts))
 
-print(list(range(-1, 8, 3)))
+
+from sklearn.model_selection import StratifiedKFold
+
+
+dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
+
+deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+deep_ordinal_encoder.fit(X, y)
+X, y = deep_ordinal_encoder.transform(X, y)
+categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+X = X.head(10499)
+y = y.head(10499)
+
+samples_per_fold = 500
+n_splits = int(len(X) / samples_per_fold)
+total_selection_size = n_splits * samples_per_fold
+
+print('totalselsize', total_selection_size)
+print('splits', n_splits)
+input()
+
+for _, fold_index in StratifiedKFold(n_splits=n_splits, shuffle=False).split(X.head(total_selection_size), y.head(total_selection_size)):
+    print(X.iloc[fold_index])
+    print(y.iloc[fold_index].value_counts())
