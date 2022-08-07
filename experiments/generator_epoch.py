@@ -224,7 +224,9 @@ def evaluate_generator(
     except Exception as e:
         result_frame = {
             'exception': str(e),
-            'traceback': traceback.format_exc()
+            'traceback': traceback.format_exc(),
+            'generator': type(generator).__name__,
+            'epochs': str(epoch)
         }
     finally:
         return result_frame
@@ -247,7 +249,7 @@ def test_generator(
     total_run_start_time = timeit.default_timer()
 
     run_identifier = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    run_title = '_'.join([experiment_basename, dataset[0], run_identifier])
+    run_title = '_'.join([experiment_basename, run_identifier])
     results = pd.DataFrame()
     log_messages = []
 
@@ -521,13 +523,15 @@ def find_files_of_type(absolute_directory_path, filetype):
 
 if __name__ == '__main__':
     for load_set in [
-        load_adult
+        # load_adult,
+        # load_electricity,
+        load_amazon
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
         is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'preliminaries')
-        experiment_basename = 'generator_epoch_test'
+        experiment_basename = 'generator_epoch_test_' + dataset_name
 
         # user_input = 'y'
         user_input = input('Run Generators for dataset "' + dataset_name + '" ? [y/N]')
