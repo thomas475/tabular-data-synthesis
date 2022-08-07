@@ -1015,10 +1015,12 @@ def start_parallelized_run():
     metric_list = get_metric_list(dataset_task)
     cv = 5
     train_size = 500
-    n_samples_list = [0, 500, 1000, 2000, 5000, 7500, 10000]
-    random_state_list = [1]
+    n_samples_list = [
+        0, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000, 8000, 9000, 10000
+    ]
+    random_state_list = [1, 2, 3, 4, 5]
     verbose = 100
-    generator_timeout = 1000
+    generator_timeout = 3600
 
     # add used random_states to experiment name
     experiment_basename = experiment_basename + '_' + '_'.join([str(random_state) for random_state in random_state_list])
