@@ -8,5 +8,7 @@ experiments/cache
 experiments/datasets
 experiments/preliminaries
 experiments/runs
+experiments/tests
 tests/cache
+tests/__pycache__
 dragan_test
