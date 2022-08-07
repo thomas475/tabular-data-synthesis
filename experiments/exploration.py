@@ -139,7 +139,7 @@ def get_generator_list(is_classification_task):
     default_batch_sizes = [50]
     # default_batch_sizes = [10, 20, 50]
     # how many times the entire dataset is passed through
-    default_epochs = [300]
+    default_epochs = [150]
 
     generator_list = [
         (PrivBNGenerator(is_classification_task=is_classification_task), {
@@ -192,7 +192,7 @@ def get_generator_list(is_classification_task):
         }),
         (CTABGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': [100],  # default 1
+            'epochs': [50],  # default 1
             # 'l2scale': default_l2_scales
         })
     ]
@@ -1020,7 +1020,7 @@ def start_parallelized_run():
     ]
     random_state_list = [1, 2, 3, 4, 5]
     verbose = 100
-    generator_timeout = 3600
+    generator_timeout = 2400
 
     # add used random_states to experiment name
     experiment_basename = experiment_basename + '_' + '_'.join([str(random_state) for random_state in random_state_list])

@@ -395,7 +395,7 @@ class TableGANGenerator(BaseEstimator):
 class CTGANGenerator(BaseEstimator):
     def __init__(self, is_classification_task=True, embedding_dim=128, generator_dim=(256, 256),
                  discriminator_dim=(256, 256), generator_lr=2e-4, generator_decay=1e-6,
-                 discriminator_lr=2e-4, discriminator_decay=1e-6, batch_size=500, discriminator_steps=1,
+                 discriminator_lr=2e-4, discriminator_decay=1e-6, batch_size=500, discriminator_steps=5,
                  log_frequency=True, verbose=False, epochs=300, pac=10, cuda=True):
         self.is_classification_task = is_classification_task
         self.embedding_dim = embedding_dim
@@ -1004,7 +1004,7 @@ class DPCTGANGenerator(BaseEstimator):
                  discriminator_lr=2e-4,
                  discriminator_decay=1e-6,
                  batch_size=500,
-                 discriminator_steps=1,
+                 discriminator_steps=5,
                  log_frequency=False,
                  verbose=True,
                  epochs=300,
