@@ -136,7 +136,8 @@ def get_generator_list(is_classification_task):
     default_generator_learning_rates = default_learning_rates.copy() # default 2e-4
     default_discriminator_learning_rates = default_learning_rates.copy() # default 2e-4
     # how many samples are trained with in each training step
-    default_batch_sizes = [10, 20, 50]
+    default_batch_sizes = [50]
+    # default_batch_sizes = [10, 20, 50]
     # how many times the entire dataset is passed through
     default_epochs = [300]
 
@@ -191,7 +192,7 @@ def get_generator_list(is_classification_task):
         }),
         (CTABGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': [10],  # default 1
+            'epochs': [100],  # default 1
             # 'l2scale': default_l2_scales
         })
     ]

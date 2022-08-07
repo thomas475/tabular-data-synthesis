@@ -64,10 +64,10 @@ class PrivBN(LegacySingleTableBaseline):
                         print('C', minn, maxx, file=f)
 
             with open(tmpdir / 'data/real.dat', 'w') as f:
-                n = len(self.data)
+                train_size = len(self.data)
                 np.random.shuffle(self.data)
-                n = min(n, self.max_samples)
-                for i in range(n):
+                train_size = min(train_size, self.max_samples)
+                for i in range(train_size):
                     row = self.data[i]
                     for id_, col in enumerate(row):
                         if id_ in d_cols:

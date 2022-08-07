@@ -17,7 +17,7 @@ from imblearn.over_sampling import SMOTE
 
 
 class PrivBNGenerator(BaseEstimator):
-    def __init__(self, is_classification_task=True, theta=20, max_samples=25000):
+    def __init__(self, is_classification_task=True, theta=20, max_samples=10000000):
         self.is_classification_task = is_classification_task
         self.theta = theta
         self.max_samples = max_samples
