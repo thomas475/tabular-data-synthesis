@@ -542,7 +542,7 @@ if __name__ == '__main__':
             scaler = RobustScaler()
             generator_list = get_generator_list(is_classification_task)
             student = get_student(is_classification_task, BinaryEncoder(categorical_columns))
-            epoch_list = [25, 50, 75, 100, 125, 150, 175, 200]
+            epoch_list = [50, 100, 150, 200, 250, 300]
             metric_list = get_metric_list(dataset_task)
             train_size = 500
             random_state_list = [1, 2, 3, 4, 5]
