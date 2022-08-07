@@ -1100,4 +1100,4 @@ def test_parallelized_run():
 
 
 if __name__ == '__main__':
-    test_parallelized_run()
+    start_parallelized_run()
