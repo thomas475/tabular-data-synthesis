@@ -91,7 +91,7 @@ def get_encoder_list(categorical_columns):
         CountEncoder(cols=categorical_columns),
         GLMMEncoder(cols=categorical_columns),
         CV5GLMMEncoder(cols=categorical_columns),
-        OneHotEncoder(cols=categorical_columns),
+        # OneHotEncoder(cols=categorical_columns),
         TargetEncoder(cols=categorical_columns),
         CV5TargetEncoder(cols=categorical_columns),
     ]
@@ -159,34 +159,34 @@ def get_generator_list(is_classification_task):
         }),
         (TableGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
+            'epochs': [300],  # default 300
             # 'l2scale': default_l2_scales
         }),
         (CTGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
+            'epochs': [200],  # default 300
             # 'generator_lr': default_generator_learning_rates,
             # 'discriminator_lr': default_discriminator_learning_rates
         }),
         (CopulaGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
+            'epochs': [300],  # default 300
             # 'generator_lr': default_generator_learning_rates,
             # 'discriminator_lr': default_discriminator_learning_rates
         }),
         (TVAEGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
+            'epochs': [300],  # default 300
             # 'l2scale': default_l2_scales
         }),
         (MedGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 1000
-            'epochs': default_epochs,  # default 2000
+            'epochs': [200],  # default 2000
             # 'l2scale': default_l2_scales
         }),
         (DPCTGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': default_epochs,  # default 300
+            'epochs': [200],  # default 300
             # 'generator_lr': default_generator_learning_rates,
             # 'discriminator_lr': default_discriminator_learning_rates
         }),
@@ -205,7 +205,7 @@ def get_generator_list(is_classification_task):
         generator_list.append(
             (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
                 'batch_size': default_batch_sizes,  # default 128
-                'epochs': default_epochs,  # default 300
+                'epochs': [200],  # default 300
                 # 'learning_rate': default_learning_rates
             }),
         )
@@ -213,7 +213,7 @@ def get_generator_list(is_classification_task):
         generator_list.append(
             (WGANGPGenerator(is_classification_task=is_classification_task), {
                 'batch_size': default_batch_sizes,  # default 128
-                'epochs': default_epochs,  # default 300
+                'epochs': [200],  # default 300
                 # 'learning_rate': default_learning_rates
             }),
         )
@@ -991,58 +991,62 @@ def parallelized_run(
 
 
 def start_parallelized_run():
-    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
+    for load_set in [
+        load_adult, load_amazon, load_census_income, load_electricity, load_higgs,
+        load_covertype, load_credit_g, load_jungle_chess
+    ]:
+        dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
-    deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
-    deep_ordinal_encoder.fit(X, y)
-    X, y = deep_ordinal_encoder.transform(X, y)
-    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+        deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+        deep_ordinal_encoder.fit(X, y)
+        X, y = deep_ordinal_encoder.transform(X, y)
+        categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+        ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
 
-    experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
-    experiment_basename = 'exploration'
-    is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-    encoder_list = get_encoder_list(categorical_columns=categorical_columns)
-    scaler = RobustScaler()
-    generator_list = get_generator_list(is_classification_task=is_classification_task)
-    student = get_student(
-        is_classification_task=is_classification_task,
-        encoder=BinaryEncoder(cols=categorical_columns)
-    )
-    teacher = get_teacher(
-        is_classification_task=is_classification_task
-    )
-    metric_list = get_metric_list(dataset_task)
-    cv = 5
-    train_size = 500
-    n_samples_list = [
-        0, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000, 8000, 9000, 10000
-    ]
-    random_state_list = [1, 2, 3, 4, 5]
-    verbose = 100
-    generator_timeout = 2400
+        experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
+        experiment_basename = 'exploration'
+        is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+        encoder_list = get_encoder_list(categorical_columns=categorical_columns)
+        scaler = RobustScaler()
+        generator_list = get_generator_list(is_classification_task=is_classification_task)
+        student = get_student(
+            is_classification_task=is_classification_task,
+            encoder=BinaryEncoder(cols=categorical_columns)
+        )
+        teacher = get_teacher(
+            is_classification_task=is_classification_task
+        )
+        metric_list = get_metric_list(dataset_task)
+        cv = 5
+        train_size = 500
+        n_samples_list = [
+            0, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000, 8000, 9000, 10000
+        ]
+        random_state_list = [1, 2, 3, 4, 5]
+        verbose = 100
+        generator_timeout = 3600
 
-    # add used random_states to experiment name
-    experiment_basename = experiment_basename + '_' + '_'.join([str(random_state) for random_state in random_state_list])
+        # add used random_states to experiment name
+        experiment_basename = experiment_basename + '_' + '_'.join([str(random_state) for random_state in random_state_list])
 
-    parallelized_run(
-        experiment_directory=experiment_directory,
-        experiment_basename=experiment_basename,
-        is_classification_task=is_classification_task,
-        dataset=(dataset_name, X, y, categorical_columns, ordinal_columns),
-        encoder_list=encoder_list,
-        scaler=scaler,
-        generator_list=generator_list,
-        student=student,
-        teacher=teacher,
-        metric_list=metric_list,
-        cv=cv,
-        train_size=train_size,
-        n_samples_list=n_samples_list,
-        random_state_list=random_state_list,
-        verbose=verbose,
-        generator_timeout=generator_timeout
-    )
+        parallelized_run(
+            experiment_directory=experiment_directory,
+            experiment_basename=experiment_basename,
+            is_classification_task=is_classification_task,
+            dataset=(dataset_name, X, y, categorical_columns, ordinal_columns),
+            encoder_list=encoder_list,
+            scaler=scaler,
+            generator_list=generator_list,
+            student=student,
+            teacher=teacher,
+            metric_list=metric_list,
+            cv=cv,
+            train_size=train_size,
+            n_samples_list=n_samples_list,
+            random_state_list=random_state_list,
+            verbose=verbose,
+            generator_timeout=generator_timeout
+        )
 
 
 def test_parallelized_run():
