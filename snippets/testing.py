@@ -48,28 +48,57 @@ def run():
         print(original_counts.compare(sampled_counts))
 
 
-from sklearn.model_selection import StratifiedKFold
+    from sklearn.model_selection import StratifiedKFold
 
+def generator_fold_test():
+    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
+
+    deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+    deep_ordinal_encoder.fit(X, y)
+    X, y = deep_ordinal_encoder.transform(X, y)
+    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+    X = X.head(10499)
+    y = y.head(10499)
+
+    samples_per_fold = 500
+    n_splits = int(len(X) / samples_per_fold)
+    total_selection_size = n_splits * samples_per_fold
+
+    print('totalselsize', total_selection_size)
+    print('splits', n_splits)
+    input()
+
+    for _, fold_index in StratifiedKFold(n_splits=n_splits, shuffle=False).split(X.head(total_selection_size), y.head(total_selection_size)):
+        print(X.iloc[fold_index])
+        print(y.iloc[fold_index].value_counts())
+
+def get_encoder_list(categorical_columns, ordinal_columns):
+    encoder_list = [
+        BinaryEncoder(cols=categorical_columns),
+        # CatBoostEncoder(cols=categorical_columns),
+        # CountEncoder(cols=categorical_columns),
+        # GLMMEncoder(cols=categorical_columns),
+        # CV5GLMMEncoder(cols=categorical_columns),
+        # OneHotEncoder(cols=categorical_columns),
+        # TargetEncoder(cols=categorical_columns),
+        # CV5TargetEncoder(cols=categorical_columns),
+    ]
+
+    if ordinal_columns:
+        encoder_list.append(
+            CollapseEncoder(cols=categorical_columns)
+        )
+
+    return encoder_list
+
+dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_amazon()
+
+print('amazon')
+print(get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns))
 
 dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
 
-deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
-deep_ordinal_encoder.fit(X, y)
-X, y = deep_ordinal_encoder.transform(X, y)
-categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
-
-X = X.head(10499)
-y = y.head(10499)
-
-samples_per_fold = 500
-n_splits = int(len(X) / samples_per_fold)
-total_selection_size = n_splits * samples_per_fold
-
-print('totalselsize', total_selection_size)
-print('splits', n_splits)
-input()
-
-for _, fold_index in StratifiedKFold(n_splits=n_splits, shuffle=False).split(X.head(total_selection_size), y.head(total_selection_size)):
-    print(X.iloc[fold_index])
-    print(y.iloc[fold_index].value_counts())
+print('adult')
+print(get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns))

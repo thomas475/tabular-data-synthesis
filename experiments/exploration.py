@@ -83,11 +83,10 @@ def get_lgbm_scoring(scoring):
     return lgbm_scoring
 
 
-def get_encoder_list(categorical_columns):
-    return [
+def get_encoder_list(categorical_columns, ordinal_columns):
+    encoder_list = [
         BinaryEncoder(cols=categorical_columns),
         CatBoostEncoder(cols=categorical_columns),
-        CollapseEncoder(cols=categorical_columns),
         CountEncoder(cols=categorical_columns),
         GLMMEncoder(cols=categorical_columns),
         CV5GLMMEncoder(cols=categorical_columns),
@@ -95,6 +94,13 @@ def get_encoder_list(categorical_columns):
         TargetEncoder(cols=categorical_columns),
         CV5TargetEncoder(cols=categorical_columns),
     ]
+
+    if ordinal_columns:
+        encoder_list.append(
+            CollapseEncoder(cols=categorical_columns)
+        )
+
+    return encoder_list
 
 
 def get_teacher(is_classification_task):
@@ -992,8 +998,14 @@ def parallelized_run(
 
 def start_parallelized_run():
     for load_set in [
-        load_adult, load_amazon, load_census_income, load_electricity, load_higgs,
-        load_covertype, load_credit_g, load_jungle_chess
+        # load_adult,
+        load_amazon,
+        load_census_income,
+        load_electricity,
+        load_higgs,
+        load_covertype,
+        load_credit_g,
+        load_jungle_chess
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
@@ -1006,7 +1018,7 @@ def start_parallelized_run():
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
         experiment_basename = 'exploration'
         is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-        encoder_list = get_encoder_list(categorical_columns=categorical_columns)
+        encoder_list = get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns)
         scaler = RobustScaler()
         generator_list = get_generator_list(is_classification_task=is_classification_task)
         student = get_student(
