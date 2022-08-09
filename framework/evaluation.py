@@ -33,7 +33,7 @@ def calculate_dcr_nndr(real_dataset, synthetic_dataset):
 
 # returns the jason-shennon distance for categorical columns and wasserstein distance for continous columns
 # taken from https://github.com/Team-TUD/CTAB-GAN/blob/main/model/eval/evaluation.py
-def calculate_jsd_wd(real, fake, cat_cols):
+def calculate_jsd_wd(real, fake, cat_cols, num_cols):
     # Lists to store the results of statistical similarities for categorical and numeric columns respectively
     cat_stat = []
     num_stat = []
@@ -86,4 +86,14 @@ def calculate_jsd_wd(real, fake, cat_cols):
             # Computing the statistical similarity between scaled real and synthetic numerical distributions
             num_stat.append(wasserstein_distance(l1, l2))
 
-    return np.mean(num_stat), np.mean(cat_stat)
+    if cat_cols:
+        jsd = np.mean(cat_stat)
+    else:
+        jsd = 0.0
+
+    if num_cols:
+        wd = np.mean(num_stat)
+    else:
+        wd = 0.0
+
+    return jsd, wd

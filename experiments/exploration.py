@@ -659,19 +659,29 @@ def tune_student(
             ordinal_synthetic_dataset = synthetic_dataset[ordinal_columns]
 
             # statistical evaluation
-            kstest_performance = KSTest.compute(
-                real_data=ordinal_real_dataset,
-                synthetic_data=ordinal_synthetic_dataset
-            )
-            cstest_performance = CSTest.compute(
-                real_data=categorical_real_dataset.astype('category'),
-                synthetic_data=categorical_synthetic_dataset.astype('category')
-            )
+            if complete_ordinal_columns:
+                kstest_performance = KSTest.compute(
+                    real_data=ordinal_real_dataset,
+                    synthetic_data=ordinal_synthetic_dataset
+                )
+            else:
+                kstest_performance = 1.0
+
+            if complete_categorical_columns:
+                cstest_performance = CSTest.compute(
+                    real_data=categorical_real_dataset.astype('category'),
+                    synthetic_data=categorical_synthetic_dataset.astype('category')
+                )
+            else:
+                cstest_performance = 1.0
+
             jsd_performance, wd_performance = calculate_jsd_wd(
                 real_dataset.reset_index(drop=True),
                 synthetic_dataset.reset_index(drop=True),
-                complete_categorical_columns
+                complete_categorical_columns,
+                complete_ordinal_columns
             )
+
             real_corr = compute_associations(real_dataset, nominal_columns=categorical_columns)
             synthetic_corr = compute_associations(synthetic_dataset, nominal_columns=categorical_columns)
             diff_corr_performance = np.linalg.norm(real_corr - synthetic_corr)
