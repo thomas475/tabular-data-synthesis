@@ -876,110 +876,119 @@ def parallelized_run(
 
     dataset_name, X, y, categorical_columns, ordinal_columns = dataset
 
-    for random_state in random_state_list:
+    completed_random_states = []
 
-        if is_classification_task:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, stratify=y)
-        else:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size)
+    try:
 
-        for metric in metric_list:
+        for random_state in random_state_list:
 
-            tf.random.set_seed(random_state)
-            torch.manual_seed(random_state)
-            os.environ['PYTHONHASHSEED'] = str(random_state)
-            random.seed(random_state)
-            np.random.seed(random_state)
+            if is_classification_task:
+                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, stratify=y)
+            else:
+                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size)
 
-            teacher_permutations = itertools.product(
-                encoder_list + [None]
-            )
+            for metric in metric_list:
 
-            teacher_results = Parallel(
-                n_jobs=-1,
-                verbose=verbose
-            )(
-                delayed(tune_teacher)(
-                    is_classification_task=is_classification_task,
-                    dataset=(dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns),
-                    encoder=encoder,
-                    scaler=scaler,
-                    teacher=teacher,
-                    metric=metric,
-                    cv=cv,
-                    random_state=random_state,
+                tf.random.set_seed(random_state)
+                torch.manual_seed(random_state)
+                os.environ['PYTHONHASHSEED'] = str(random_state)
+                random.seed(random_state)
+                np.random.seed(random_state)
+
+                teacher_permutations = itertools.product(
+                    encoder_list + [None]
+                )
+
+                teacher_results = Parallel(
+                    n_jobs=-1,
                     verbose=verbose
-                )
-                for (
-                    index, (
-                        encoder,
+                )(
+                    delayed(tune_teacher)(
+                        is_classification_task=is_classification_task,
+                        dataset=(dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns),
+                        encoder=encoder,
+                        scaler=scaler,
+                        teacher=teacher,
+                        metric=metric,
+                        cv=cv,
+                        random_state=random_state,
+                        verbose=verbose
                     )
-                ) in enumerate(teacher_permutations)
-            )
-
-            tuned_teacher_dict = {}
-            for encoder_name, tuned_teacher, result in teacher_results:
-                if tuned_teacher is not None:
-                    results = results.append(result, ignore_index=True).reset_index(drop=True)
-                    tuned_teacher_dict[encoder_name] = tuned_teacher
-                    log_message = 'Tuning and evaluating the teacher ' + type(teacher[0]).__name__ + ' with encoder ' \
-                                  + encoder_name + ' with randomstate ' + str(random_state) + ' for metric "' + metric[0] \
-                                  + '" was successful.'
-                else:
-                    log_message = 'There has been an error with tuning and evaluating the teacher ' + type(teacher[0]).__name__ \
-                                  + ' with encoder ' + encoder_name + ' with randomstate ' + str(random_state) \
-                                  + ' for metric "' + metric[0] + '":' \
-                                  + '\n' + result['exception'] \
-                                  + '\n' + result['traceback']
-                log_messages.append(log_message)
-
-            student_permutations = itertools.product(
-                encoder_list + [None],
-                generator_list
-            )
-
-            student_results = Parallel(
-                n_jobs=-1,
-                verbose=verbose
-            )(
-                delayed(tune_student)(
-                    is_classification_task=is_classification_task,
-                    dataset=(dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns),
-                    encoder=encoder,
-                    scaler=scaler,
-                    generator=generator,
-                    student=student,
-                    tuned_teacher_dict=tuned_teacher_dict,
-                    metric=metric,
-                    cv=cv,
-                    n_samples_list=n_samples_list,
-                    random_state=random_state,
-                    verbose=verbose,
-                    timeout=generator_timeout
+                    for (
+                        index, (
+                            encoder,
+                        )
+                    ) in enumerate(teacher_permutations)
                 )
-                for (
-                    index, (
-                        encoder,
-                        generator
-                    )
-                ) in enumerate(student_permutations)
-            )
 
-            for encoder_name, generator_name, result_frame in student_results:
-                if isinstance(result_frame, dict):
-                    log_message = 'There has been an error with tuning and evaluating the student ' + type(student[0]).__name__ \
-                                  + ' with encoder ' + encoder_name + ' and generator ' + generator_name \
-                                  + ' with randomstate ' + str(random_state) + ' with teacher ' + type(teacher[0]).__name__ \
-                                  + ' for metric "' + metric[0] + '":' \
-                                  + '\n' + result_frame['exception'] \
-                                  + '\n' + result_frame['traceback']
-                else:
-                    results = results.append(result_frame, ignore_index=True).reset_index(drop=True)
-                    log_message = 'Tuning and evaluating the student ' + type(student[0]).__name__ + ' with encoder ' \
-                                  + encoder_name + ' and generator ' + generator_name + ' with teacher ' \
-                                  + type(teacher[0]).__name__ + ' with randomstate ' + str(random_state) + ' for metric "' \
-                                  + metric[0] + '" was successful.'
-                log_messages.append(log_message)
+                tuned_teacher_dict = {}
+                for encoder_name, tuned_teacher, result in teacher_results:
+                    if tuned_teacher is not None:
+                        results = results.append(result, ignore_index=True).reset_index(drop=True)
+                        tuned_teacher_dict[encoder_name] = tuned_teacher
+                        log_message = 'Tuning and evaluating the teacher ' + type(teacher[0]).__name__ + ' with encoder ' \
+                                      + encoder_name + ' with randomstate ' + str(random_state) + ' for metric "' + metric[0] \
+                                      + '" was successful.'
+                    else:
+                        log_message = 'There has been an error with tuning and evaluating the teacher ' + type(teacher[0]).__name__ \
+                                      + ' with encoder ' + encoder_name + ' with randomstate ' + str(random_state) \
+                                      + ' for metric "' + metric[0] + '":' \
+                                      + '\n' + result['exception'] \
+                                      + '\n' + result['traceback']
+                    log_messages.append(log_message)
+
+                student_permutations = itertools.product(
+                    encoder_list + [None],
+                    generator_list
+                )
+
+                student_results = Parallel(
+                    n_jobs=-1,
+                    verbose=verbose
+                )(
+                    delayed(tune_student)(
+                        is_classification_task=is_classification_task,
+                        dataset=(dataset_name, X_train, X_test, y_train, y_test, categorical_columns, ordinal_columns),
+                        encoder=encoder,
+                        scaler=scaler,
+                        generator=generator,
+                        student=student,
+                        tuned_teacher_dict=tuned_teacher_dict,
+                        metric=metric,
+                        cv=cv,
+                        n_samples_list=n_samples_list,
+                        random_state=random_state,
+                        verbose=verbose,
+                        timeout=generator_timeout
+                    )
+                    for (
+                        index, (
+                            encoder,
+                            generator
+                        )
+                    ) in enumerate(student_permutations)
+                )
+
+                for encoder_name, generator_name, result_frame in student_results:
+                    if isinstance(result_frame, dict):
+                        log_message = 'There has been an error with tuning and evaluating the student ' + type(student[0]).__name__ \
+                                      + ' with encoder ' + encoder_name + ' and generator ' + generator_name \
+                                      + ' with randomstate ' + str(random_state) + ' with teacher ' + type(teacher[0]).__name__ \
+                                      + ' for metric "' + metric[0] + '":' \
+                                      + '\n' + result_frame['exception'] \
+                                      + '\n' + result_frame['traceback']
+                    else:
+                        results = results.append(result_frame, ignore_index=True).reset_index(drop=True)
+                        log_message = 'Tuning and evaluating the student ' + type(student[0]).__name__ + ' with encoder ' \
+                                      + encoder_name + ' and generator ' + generator_name + ' with teacher ' \
+                                      + type(teacher[0]).__name__ + ' with randomstate ' + str(random_state) + ' for metric "' \
+                                      + metric[0] + '" was successful.'
+                    log_messages.append(log_message)
+
+            completed_random_states.append(random_state)
+
+    except Exception as e:
+        print(e)
 
     total_run_time = timeit.default_timer() - total_run_start_time
     total_time_message = 'The total runtime was ' + str(round(total_run_time, 4)) + ' seconds (' \
@@ -988,12 +997,17 @@ def parallelized_run(
 
     print(total_time_message)
 
+    # add used random_states to experiment name
+    if completed_random_states:
+        run_title = run_title + '_' + '_'.join(
+            [str(random_state) for random_state in completed_random_states]
+        )
+
     Path(experiment_directory).mkdir(parents=True, exist_ok=True)
     Path(os.path.join(experiment_directory, run_title)).mkdir(parents=True, exist_ok=True)
-    os.chdir(os.path.join(experiment_directory, run_title))
-    with open(run_title + '.log', 'w') as log_file:
+    with open(os.path.join(experiment_directory, run_title, run_title + '.log'), 'w') as log_file:
         log_file.write('\n\n'.join(log_messages))
-    results.to_csv(run_title + '.csv', index=False)
+    results.to_csv(os.path.join(experiment_directory, run_title, run_title + '.csv'), index=False)
 
 
 def start_parallelized_run():
@@ -1036,10 +1050,7 @@ def start_parallelized_run():
         ]
         random_state_list = [1, 2, 3, 4, 5]
         verbose = 100
-        generator_timeout = 3600
-
-        # add used random_states to experiment name
-        experiment_basename = experiment_basename + '_' + '_'.join([str(random_state) for random_state in random_state_list])
+        generator_timeout = 1800
 
         parallelized_run(
             experiment_directory=experiment_directory,
@@ -1090,10 +1101,6 @@ def test_parallelized_run():
     random_state_list = [1]
     verbose = 100
     generator_timeout = 1000
-
-    # add used random_states to experiment name
-    experiment_basename = experiment_basename + '_' + '_'.join(
-        [str(random_state) for random_state in random_state_list])
 
     parallelized_run(
         experiment_directory=experiment_directory,
