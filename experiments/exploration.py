@@ -1003,7 +1003,7 @@ def parallelized_run(
     # add used random_states to experiment name
     if completed_random_states:
         run_title = run_title + '_' + '_'.join(
-            [str(random_state) for random_state in completed_random_states]
+            [str(completed_random_state) for completed_random_state in completed_random_states]
         )
 
     Path(experiment_directory).mkdir(parents=True, exist_ok=True)
