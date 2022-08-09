@@ -1,5 +1,6 @@
 import os
 import random
+import sys
 
 import numpy as np
 import pandas as pd
@@ -877,6 +878,7 @@ def parallelized_run(
     dataset_name, X, y, categorical_columns, ordinal_columns = dataset
 
     completed_random_states = []
+    interrupted = False
 
     try:
 
@@ -989,6 +991,7 @@ def parallelized_run(
 
     except KeyboardInterrupt as e:
         print(e)
+        interrupted = True
 
     total_run_time = timeit.default_timer() - total_run_start_time
     total_time_message = 'The total runtime was ' + str(round(total_run_time, 4)) + ' seconds (' \
@@ -1008,6 +1011,9 @@ def parallelized_run(
     with open(os.path.join(experiment_directory, run_title, run_title + '.log'), 'w') as log_file:
         log_file.write('\n\n'.join(log_messages))
     results.to_csv(os.path.join(experiment_directory, run_title, run_title + '.csv'), index=False)
+
+    if interrupted:
+        sys.exit(0)
 
 
 def start_parallelized_run():
