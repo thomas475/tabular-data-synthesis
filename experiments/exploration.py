@@ -987,7 +987,7 @@ def parallelized_run(
 
             completed_random_states.append(random_state)
 
-    except Exception as e:
+    except KeyboardInterrupt as e:
         print(e)
 
     total_run_time = timeit.default_timer() - total_run_start_time
