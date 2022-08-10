@@ -86,12 +86,12 @@ def calculate_jsd_wd(real, fake, cat_cols, num_cols):
             # Computing the statistical similarity between scaled real and synthetic numerical distributions
             num_stat.append(wasserstein_distance(l1, l2))
 
-    if cat_cols:
+    if list(cat_cols):
         jsd = np.mean(cat_stat)
     else:
         jsd = 0.0
 
-    if num_cols:
+    if list(num_cols):
         wd = np.mean(num_stat)
     else:
         wd = 0.0
