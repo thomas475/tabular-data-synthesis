@@ -65,11 +65,20 @@ class RegularDataProcessor(BaseProcessor):
             ("encoder", OneHotEncoder(sparse=False, handle_unknown='ignore')),
         ])
 
-        self.num_pipeline.fit(X[self.num_cols]) if self.num_cols else zeros([len(X), 0])
-        self.cat_pipeline.fit(X[self.cat_cols]) if self.num_cols else zeros([len(X), 0])
+        if self.num_cols:
+            self.num_pipeline.fit(X[self.num_cols])
+        if self.cat_cols:
+            self.cat_pipeline.fit(X[self.cat_cols])
 
-        self._num_col_idx_ = len(self.num_pipeline.get_feature_names_out())
-        self._cat_col_idx_ = self._num_col_idx_ + len(self.cat_pipeline.get_feature_names_out())
+        if self.num_cols:
+            self._num_col_idx_ = len(self.num_pipeline.get_feature_names_out())
+        else:
+            self._num_col_idx_ = 0
+
+        if self.cat_cols:
+            self._cat_col_idx_ = self._num_col_idx_ + len(self.cat_pipeline.get_feature_names_out())
+        else:
+            self._cat_col_idx_ = self._num_col_idx_ + 0
 
         return self
 

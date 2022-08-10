@@ -1,5 +1,9 @@
 import pandas as pd
 from category_encoders import *
+from numpy import zeros
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler
+
 from framework.encoders import *
 import copy
 from experiments.datasets import *
@@ -8,6 +12,7 @@ import random
 import os
 
 from framework.samplers import *
+
 
 def get_relative_counts(column):
     unique, counts = np.unique(column, return_counts=True)
@@ -23,6 +28,7 @@ def get_relative_counts(column):
         }, ignore_index=True)
 
     return result
+
 
 def run():
     for load_set in [load_adult, load_covertype]:
@@ -47,8 +53,8 @@ def run():
         print(sampled_counts)
         print(original_counts.compare(sampled_counts))
 
-
     from sklearn.model_selection import StratifiedKFold
+
 
 def generator_fold_test():
     dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
@@ -70,9 +76,11 @@ def generator_fold_test():
     print('splits', n_splits)
     input()
 
-    for _, fold_index in StratifiedKFold(n_splits=n_splits, shuffle=False).split(X.head(total_selection_size), y.head(total_selection_size)):
+    for _, fold_index in StratifiedKFold(n_splits=n_splits, shuffle=False).split(X.head(total_selection_size),
+                                                                                 y.head(total_selection_size)):
         print(X.iloc[fold_index])
         print(y.iloc[fold_index].value_counts())
+
 
 def get_encoder_list(categorical_columns, ordinal_columns):
     encoder_list = [
@@ -93,12 +101,13 @@ def get_encoder_list(categorical_columns, ordinal_columns):
 
     return encoder_list
 
-dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_amazon()
 
-print('amazon')
-print(get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns))
+def print_text(text):
+    print(text)
 
-dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
 
-print('adult')
-print(get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns))
+_num_pipeline = Pipeline([
+    ("scaler", MinMaxScaler()),
+])
+
+_num_pipeline.fit_transform(zeros([10, 0]))
