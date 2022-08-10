@@ -1029,8 +1029,8 @@ def parallelized_run(
 def start_parallelized_run():
     for load_set in [
         # load_adult,
-        load_amazon,
-        load_census_income,
+        # load_amazon,
+        # load_census_income,
         load_electricity,
         load_higgs,
         load_covertype,
