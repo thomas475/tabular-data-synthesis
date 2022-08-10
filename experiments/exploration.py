@@ -18,11 +18,7 @@ from lightgbm import LGBMClassifier, LGBMRegressor
 from lightgbm import early_stopping
 from catboost import CatBoostClassifier, CatBoostRegressor
 
-from experiments.datasets import \
-    load_adult, load_amazon, load_census_income, load_electricity, load_higgs, \
-    load_covertype, load_credit_g, load_jungle_chess, \
-    load_california, load_diamonds, load_king, \
-    BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION
+from experiments.datasets import *
 
 from framework.encoders import DeepOrdinalEncoder
 from framework.samplers import *
@@ -85,21 +81,24 @@ def get_lgbm_scoring(scoring):
 
 
 def get_encoder_list(categorical_columns, ordinal_columns):
-    encoder_list = [
-        BinaryEncoder(cols=categorical_columns),
-        CatBoostEncoder(cols=categorical_columns),
-        CountEncoder(cols=categorical_columns),
-        GLMMEncoder(cols=categorical_columns),
-        CV5GLMMEncoder(cols=categorical_columns),
-        # OneHotEncoder(cols=categorical_columns),
-        TargetEncoder(cols=categorical_columns),
-        CV5TargetEncoder(cols=categorical_columns),
-    ]
+    if categorical_columns:
+        encoder_list = [
+            BinaryEncoder(cols=categorical_columns),
+            CatBoostEncoder(cols=categorical_columns),
+            CountEncoder(cols=categorical_columns),
+            GLMMEncoder(cols=categorical_columns),
+            CV5GLMMEncoder(cols=categorical_columns),
+            # OneHotEncoder(cols=categorical_columns),
+            TargetEncoder(cols=categorical_columns),
+            CV5TargetEncoder(cols=categorical_columns),
+        ]
 
-    if ordinal_columns:
-        encoder_list.append(
-            CollapseEncoder(cols=categorical_columns)
-        )
+        if ordinal_columns:
+            encoder_list.append(
+                CollapseEncoder(cols=categorical_columns)
+            )
+    else:
+        encoder_list = []
 
     return encoder_list
 
@@ -1030,9 +1029,12 @@ def start_parallelized_run():
     for load_set in [
         # load_adult,
         # load_amazon,
-        # load_census_income,
-        load_electricity,
-        load_higgs,
+        load_bank_marketing,
+        load_census_income,
+        load_credit_approval,
+        # load_electricity,
+        # load_higgs,
+        load_kr_vs_kp,
         load_covertype,
         load_credit_g,
         load_jungle_chess
@@ -1066,7 +1068,7 @@ def start_parallelized_run():
         ]
         random_state_list = [1, 2, 3, 4, 5]
         verbose = 100
-        generator_timeout = 1800
+        generator_timeout = 3600
 
         parallelized_run(
             experiment_directory=experiment_directory,

@@ -85,6 +85,14 @@ def load_amazon():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_bank_marketing():
+    dataset_name = 'bank_marketing'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 1461
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 # like in "Synthesizing Tabular Data using Generative Adversarial Networks"
 def load_census_income():
     dataset_name = 'census_income'
@@ -96,6 +104,18 @@ def load_census_income():
         dataset_task=dataset_task,
         dataset_id=dataset_id,
         target_column='V42'
+    )
+
+
+def load_credit_approval():
+    dataset_name = 'credit_approval'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 29
+
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id
     )
 
 
@@ -121,6 +141,14 @@ def load_higgs():
     dataset_name = 'higgs'
     dataset_task = BINARY_CLASSIFICATION
     dataset_id = 23512
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_kr_vs_kp():
+    dataset_name = 'kr_vs_kp'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 3
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
