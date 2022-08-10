@@ -102,12 +102,5 @@ def get_encoder_list(categorical_columns, ordinal_columns):
     return encoder_list
 
 
-def print_text(text):
-    print(text)
-
-
-_num_pipeline = Pipeline([
-    ("scaler", MinMaxScaler()),
-])
-
-_num_pipeline.fit_transform(zeros([10, 0]))
+print(list([]))
+print(list(range(0, 2)))

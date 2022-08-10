@@ -659,7 +659,7 @@ def tune_student(
             ordinal_synthetic_dataset = synthetic_dataset[ordinal_columns]
 
             # statistical evaluation
-            if complete_ordinal_columns:
+            if list(complete_ordinal_columns):
                 kstest_performance = KSTest.compute(
                     real_data=ordinal_real_dataset,
                     synthetic_data=ordinal_synthetic_dataset
@@ -667,7 +667,7 @@ def tune_student(
             else:
                 kstest_performance = 1.0
 
-            if complete_categorical_columns:
+            if list(complete_categorical_columns):
                 cstest_performance = CSTest.compute(
                     real_data=categorical_real_dataset.astype('category'),
                     synthetic_data=categorical_synthetic_dataset.astype('category')
