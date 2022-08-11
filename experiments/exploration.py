@@ -1029,8 +1029,8 @@ def start_parallelized_run():
     for load_set in [
         # load_adult,
         # load_amazon,
-        load_bank_marketing,
-        load_census_income,
+        # load_bank_marketing,
+        # load_census_income,
         load_credit_approval,
         # load_electricity,
         # load_higgs,
