@@ -113,7 +113,7 @@ def get_test_metric_list(dataset_task):
 def get_test_generator_list(is_classification_task):
     generator_list = [
         (TableGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': [50],  # default 500
+            'batch_size': [500],  # default 500
             'epochs': [1],  # default 300
         })
     ]
@@ -126,8 +126,8 @@ def get_test_generator_list(is_classification_task):
     else:
         generator_list.append(
             (WGANGPGenerator(is_classification_task=is_classification_task), {
-                'batch_size': 500,  # default 128
-                'epochs': 1,  # default 300
+                'batch_size': [500],  # default 128
+                'epochs': [1],  # default 300
                 # 'learning_rate': default_learning_rates
             }),
         )

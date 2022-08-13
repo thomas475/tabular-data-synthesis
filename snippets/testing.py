@@ -13,6 +13,9 @@ import os
 
 from framework.samplers import *
 
+from sklearn.preprocessing import RobustScaler
+from sklearn.compose import ColumnTransformer
+
 
 def get_relative_counts(column):
     unique, counts = np.unique(column, return_counts=True)
@@ -102,5 +105,88 @@ def get_encoder_list(categorical_columns, ordinal_columns):
     return encoder_list
 
 
-print(list([]))
-print(list(range(0, 2)))
+def get_encoder_list(categorical_columns, ordinal_columns):
+    if categorical_columns:
+        encoder_list = [
+            BinaryEncoder(cols=categorical_columns),
+            CatBoostEncoder(cols=categorical_columns),
+            CountEncoder(cols=categorical_columns),
+            GLMMEncoder(cols=categorical_columns),
+            CV5GLMMEncoder(cols=categorical_columns),
+            # OneHotEncoder(cols=categorical_columns),
+            TargetEncoder(cols=categorical_columns),
+            CV5TargetEncoder(cols=categorical_columns),
+        ]
+
+        if ordinal_columns:
+            encoder_list.append(
+                CollapseEncoder(cols=categorical_columns)
+            )
+    else:
+        encoder_list = []
+
+    return encoder_list
+
+
+def test_encoders():
+    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_car()
+
+    dataset = X.copy()
+    dataset[y.name] = y
+    print(dataset)
+    print(categorical_columns)
+    print(ordinal_columns)
+
+    deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+    deep_ordinal_encoder.fit(X, y)
+    X, y = deep_ordinal_encoder.transform(X, y)
+    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+    dataset = X.copy()
+    dataset[y.name] = y
+    print(dataset)
+    print(categorical_columns)
+    print(ordinal_columns)
+
+    for encoder in get_encoder_list(categorical_columns, ordinal_columns):
+        scaler = RobustScaler()
+
+        # apply the encoder on the categorical columns and the scaler on the numerical columns
+        column_transformer = ColumnTransformer(
+            [
+                ("scaler", scaler, ordinal_columns.copy()),
+                ("encoder", encoder, categorical_columns.copy())
+            ]
+        )
+
+        original_column_order = X.columns
+
+        index = X.index
+        X_encoded = column_transformer.fit_transform(X.copy())
+        X_encoded = pd.DataFrame(X_encoded)
+        X_encoded.index = index
+
+        # our dataset is completely numerical now, so we update the columns
+        categorical_columns = []
+        ordinal_columns = X.columns
+        y_encoded = y.copy()
+        y_encoded.name = len(ordinal_columns)
+
+        # convert categorical numerical entries to int
+        X_encoded[categorical_columns] = X_encoded[categorical_columns].astype(int)
+
+        categorical_columns = []
+        ordinal_columns = X.columns
+
+        print(type(encoder).__name__, 'completed')
+        dataset = X_encoded.copy()
+        dataset[y_encoded.name] = y_encoded
+        print(dataset)
+        print(categorical_columns)
+        print(ordinal_columns)
+
+
+test_encoders()
+
+import category_encoders.glmm

@@ -276,69 +276,69 @@ def tune_teacher(
     train_size = len(X_train)
     test_size = len(X_test)
 
-    teacher_tuning_start_time = timeit.default_timer()
-
-    # apply encoder/scaler
-    if encoder is None:
-        # if no encoder is submitted we only apply the scaler on the numerical columns
-        column_transformer = ColumnTransformer(
-            [
-                ("scaler", scaler, ordinal_columns.copy())
-            ],
-            remainder='passthrough'
-        )
-    else:
-        # apply the encoder on the categorical columns and the scaler on the numerical columns
-        column_transformer = ColumnTransformer(
-            [
-                ("scaler", scaler, ordinal_columns.copy()),
-                ("encoder", encoder, categorical_columns.copy())
-            ]
-        )
-
-    original_column_order = X_train.columns
-
-    index = X_train.index
-    X_train = column_transformer.fit_transform(X_train.copy(), y_train.copy())
-    X_train = pd.DataFrame(X_train)
-    X_train.index = index
-
-    index = X_test.index
-    X_test = column_transformer.transform(X_test.copy())
-    X_test = pd.DataFrame(X_test)
-    X_test.index = index
-
-    if encoder is None:
-        # our dataset has only been encoded, so we restore the original column titles and order
-        X_train.columns = ordinal_columns + categorical_columns
-        X_train = X_train[original_column_order]
-        X_test.columns = ordinal_columns + categorical_columns
-        X_test = X_test[original_column_order]
-    else:
-        # our dataset is completely numerical now, so we update the columns
-        categorical_columns = []
-        ordinal_columns = X_train.columns
-        y_train = y_train.copy()
-        y_train.name = len(ordinal_columns)
-        y_test = y_test.copy()
-        y_test.name = len(ordinal_columns)
-
-    # convert categorical numerical entries to int
-    X_train[categorical_columns] = X_train[categorical_columns].astype(int)
-    X_test[categorical_columns] = X_test[categorical_columns].astype(int)
-
-    # tune the teacher
-    tuned_teacher = GridSearchCV(
-        estimator=teacher,
-        param_grid=teacher_grid,
-        scoring=metric_name,
-        error_score="raise",
-        refit=True,
-        cv=cv,
-        verbose=verbose
-    )
-
     try:
+        teacher_tuning_start_time = timeit.default_timer()
+
+        # apply encoder/scaler
+        if encoder is None:
+            # if no encoder is submitted we only apply the scaler on the numerical columns
+            column_transformer = ColumnTransformer(
+                [
+                    ("scaler", scaler, ordinal_columns.copy())
+                ],
+                remainder='passthrough'
+            )
+        else:
+            # apply the encoder on the categorical columns and the scaler on the numerical columns
+            column_transformer = ColumnTransformer(
+                [
+                    ("scaler", scaler, ordinal_columns.copy()),
+                    ("encoder", encoder, categorical_columns.copy())
+                ]
+            )
+
+        original_column_order = X_train.columns
+
+        index = X_train.index
+        X_train = column_transformer.fit_transform(X_train.copy(), y_train.copy())
+        X_train = pd.DataFrame(X_train)
+        X_train.index = index
+
+        index = X_test.index
+        X_test = column_transformer.transform(X_test.copy())
+        X_test = pd.DataFrame(X_test)
+        X_test.index = index
+
+        if encoder is None:
+            # our dataset has only been encoded, so we restore the original column titles and order
+            X_train.columns = ordinal_columns + categorical_columns
+            X_train = X_train[original_column_order]
+            X_test.columns = ordinal_columns + categorical_columns
+            X_test = X_test[original_column_order]
+        else:
+            # our dataset is completely numerical now, so we update the columns
+            categorical_columns = []
+            ordinal_columns = X_train.columns
+            y_train = y_train.copy()
+            y_train.name = len(ordinal_columns)
+            y_test = y_test.copy()
+            y_test.name = len(ordinal_columns)
+
+        # convert categorical numerical entries to int
+        X_train[categorical_columns] = X_train[categorical_columns].astype(int)
+        X_test[categorical_columns] = X_test[categorical_columns].astype(int)
+
+        # tune the teacher
+        tuned_teacher = GridSearchCV(
+            estimator=teacher,
+            param_grid=teacher_grid,
+            scoring=metric_name,
+            error_score="raise",
+            refit=True,
+            cv=cv,
+            verbose=verbose
+        )
+
         # if is_classification_task:
         #     X_train_train, X_train_validation, y_train_train, y_train_validation = train_test_split(
         #         X_train, y_train, test_size=0.1, stratify=y_train
@@ -1103,7 +1103,7 @@ def start_parallelized_run():
 
 
 def test_parallelized_run():
-    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_adult()
+    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_diamonds()
 
     deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
     deep_ordinal_encoder.fit(X, y)
@@ -1153,4 +1153,4 @@ def test_parallelized_run():
 
 
 if __name__ == '__main__':
-    start_parallelized_run()
+    test_parallelized_run()
