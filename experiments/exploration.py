@@ -362,7 +362,11 @@ def tune_teacher(
 
         teacher_tuning_time = timeit.default_timer() - teacher_tuning_start_time
 
-        performance = metric_function(y_test, pd.Series(tuned_teacher.predict(X_test)))
+        performance = metric_function(
+            y_test,
+            pd.Series(tuned_teacher.predict(X_test)),
+            **metric_parameters
+        )
 
         result = pd.DataFrame({
             'dataset': [dataset_name],
@@ -1031,13 +1035,21 @@ def start_parallelized_run():
         # load_amazon,
         # load_bank_marketing,
         # load_census_income,
-        load_credit_approval,
+        # load_credit_approval,
         # load_electricity,
         # load_higgs,
-        load_kr_vs_kp,
+        # load_kr_vs_kp,
+        load_car,
+        load_cmc,
         load_covertype,
         load_credit_g,
-        load_jungle_chess
+        # load_jungle_chess,
+        load_vowel,
+        # load_kaggle_30_days_of_ml,
+        # load_brazilian_houses,
+        # load_california,
+        # load_diamonds,
+        # load_king,
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 

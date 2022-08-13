@@ -153,6 +153,22 @@ def load_kr_vs_kp():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_car():
+    dataset_name = 'car'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 40975
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_cmc():
+    dataset_name = 'cmc'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 23
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 # like in "Fast, Accurate, and Simple Models for Tabular Data via Augmented Distillation"
 def load_covertype():
     dataset_name = 'covertype'
@@ -176,6 +192,37 @@ def load_jungle_chess():
     dataset_name = 'jungle_chess'
     dataset_task = MULTICLASS_CLASSIFICATION
     dataset_id = 41027
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_vowel():
+    dataset_name = 'vowel'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 307
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_kaggle_30_days_of_ml():
+    dataset_name = 'kaggle_30_days_of_ml'
+    dataset_task = REGRESSION
+    dataset_id = 43090
+
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id,
+        drop_columns=[
+            'id'
+        ]
+    )
+
+
+def load_brazilian_houses():
+    dataset_name = 'brazilian_houses'
+    dataset_task = REGRESSION
+    dataset_id = 42688
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
