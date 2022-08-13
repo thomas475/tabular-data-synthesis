@@ -1164,7 +1164,7 @@ def test_encoders_parallelized_run():
     experiment_directory = os.path.join(os.getcwd(), 'experiments', 'tests')
     experiment_basename = 'exploration'
     is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-    encoder_list = get_encoder_list(categorical_columns=categorical_columns, ordinal_columns==ordinal_columns)
+    encoder_list = get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns)
     scaler = RobustScaler()
     generator_list = get_test_generator_list(is_classification_task=is_classification_task)
     student = get_test_student(
