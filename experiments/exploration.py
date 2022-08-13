@@ -1153,7 +1153,7 @@ def test_parallelized_run():
 
 
 def test_encoders_parallelized_run():
-    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_credit_g()
+    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_diamonds()
 
     deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
     deep_ordinal_encoder.fit(X, y)
