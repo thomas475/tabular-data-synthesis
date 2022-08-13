@@ -27,7 +27,7 @@ from framework.encoders import DeepOrdinalEncoder
 from framework.samplers import *
 
 from category_encoders import BinaryEncoder, CatBoostEncoder, CountEncoder, GLMMEncoder, OneHotEncoder, TargetEncoder
-from framework.encoders import CollapseEncoder, CV5GLMMEncoder, CV5TargetEncoder, CVEncoder, CVEncoderOriginal
+from framework.encoders import CollapseEncoder, StratifiedCV5GLMMEncoder, StratifiedCV5TargetEncoder, StratifiedCVEncoder, StratifiedCVEncoderOriginal
 
 from framework.pipelines import AugmentedEstimation
 
@@ -112,10 +112,10 @@ def get_test_metric_list(dataset_task):
 
 def get_test_generator_list(is_classification_task):
     generator_list = [
-        (TableGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': [500],  # default 500
-            'epochs': [1],  # default 300
-        })
+        # (TableGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': [500],  # default 500
+        #     'epochs': [1],  # default 300
+        # })
     ]
     if is_classification_task:
         generator_list.append(

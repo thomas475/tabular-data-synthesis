@@ -24,7 +24,10 @@ from framework.encoders import DeepOrdinalEncoder
 from framework.samplers import *
 
 from category_encoders import BinaryEncoder, CatBoostEncoder, CountEncoder, GLMMEncoder, OneHotEncoder, TargetEncoder
-from framework.encoders import CollapseEncoder, CV5GLMMEncoder, CV5TargetEncoder, CVEncoder, CVEncoderOriginal
+from category_encoders.wrapper import PolynomialWrapper
+from framework.encoders import CollapseEncoder, CV5GLMMEncoder, StratifiedCV5GLMMEncoder, CV5TargetEncoder, \
+    StratifiedCV5TargetEncoder, MultiClassCatBoostEncoder, MultiClassGLMMEncoder, MultiClassStratifiedCV5GLMMEncoder, \
+    MultiClassTargetEncoder, MultiClassStratifiedCV5TargetEncoder
 
 from framework.pipelines import AugmentedEstimation
 
@@ -80,18 +83,38 @@ def get_lgbm_scoring(scoring):
     return lgbm_scoring
 
 
-def get_encoder_list(categorical_columns, ordinal_columns):
+def get_encoder_list(task, categorical_columns, ordinal_columns):
     if categorical_columns:
         encoder_list = [
             BinaryEncoder(cols=categorical_columns),
-            CatBoostEncoder(cols=categorical_columns),
             CountEncoder(cols=categorical_columns),
-            GLMMEncoder(cols=categorical_columns),
-            CV5GLMMEncoder(cols=categorical_columns),
             # OneHotEncoder(cols=categorical_columns),
-            TargetEncoder(cols=categorical_columns),
-            CV5TargetEncoder(cols=categorical_columns),
         ]
+
+        if task == BINARY_CLASSIFICATION:
+            encoder_list.extend([
+                CatBoostEncoder(cols=categorical_columns),
+                GLMMEncoder(cols=categorical_columns),
+                StratifiedCV5GLMMEncoder(cols=categorical_columns),
+                TargetEncoder(cols=categorical_columns),
+                StratifiedCV5TargetEncoder(cols=categorical_columns)
+            ])
+        if task == MULTICLASS_CLASSIFICATION:
+            encoder_list.extend([
+                MultiClassCatBoostEncoder(cols=categorical_columns),
+                MultiClassGLMMEncoder(cols=categorical_columns),
+                MultiClassStratifiedCV5GLMMEncoder(cols=categorical_columns),
+                MultiClassTargetEncoder(cols=categorical_columns),
+                MultiClassStratifiedCV5TargetEncoder(cols=categorical_columns)
+            ])
+        else:
+            encoder_list.extend([
+                CatBoostEncoder(cols=categorical_columns),
+                GLMMEncoder(cols=categorical_columns),
+                CV5GLMMEncoder(cols=categorical_columns),
+                TargetEncoder(cols=categorical_columns),
+                CV5TargetEncoder(cols=categorical_columns),
+            ])
 
         if ordinal_columns:
             encoder_list.append(
@@ -1062,7 +1085,11 @@ def start_parallelized_run():
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
         experiment_basename = 'exploration'
         is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-        encoder_list = get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns)
+        encoder_list = get_encoder_list(
+            task=dataset_task,
+            categorical_columns=categorical_columns,
+            ordinal_columns=ordinal_columns
+        )
         scaler = RobustScaler()
         generator_list = get_generator_list(is_classification_task=is_classification_task)
         student = get_student(
@@ -1164,7 +1191,11 @@ def test_encoders_parallelized_run():
     experiment_directory = os.path.join(os.getcwd(), 'experiments', 'tests')
     experiment_basename = 'exploration'
     is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
-    encoder_list = get_encoder_list(categorical_columns=categorical_columns, ordinal_columns=ordinal_columns)
+    encoder_list = get_encoder_list(
+        task=dataset_task,
+        categorical_columns=categorical_columns,
+        ordinal_columns=ordinal_columns
+    )
     scaler = RobustScaler()
     generator_list = get_test_generator_list(is_classification_task=is_classification_task)
     student = get_test_student(
@@ -1203,4 +1234,4 @@ def test_encoders_parallelized_run():
 
 
 if __name__ == '__main__':
-    start_parallelized_run()
+    test_encoders_parallelized_run()

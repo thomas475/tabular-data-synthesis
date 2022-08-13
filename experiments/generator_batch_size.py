@@ -20,7 +20,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.compose import ColumnTransformer
 
 from category_encoders import BinaryEncoder, CatBoostEncoder, CountEncoder, GLMMEncoder, OneHotEncoder, TargetEncoder
-from framework.encoders import CollapseEncoder, CV5GLMMEncoder, CV5TargetEncoder, CVEncoder, CVEncoderOriginal
+from framework.encoders import CollapseEncoder, StratifiedCV5GLMMEncoder, StratifiedCV5TargetEncoder, StratifiedCVEncoder, StratifiedCVEncoderOriginal
 
 from framework.samplers import *
 
@@ -52,10 +52,10 @@ def get_encoder_list(categorical_columns):
         CollapseEncoder(cols=categorical_columns),
         CountEncoder(cols=categorical_columns),
         GLMMEncoder(cols=categorical_columns),
-        CV5GLMMEncoder(cols=categorical_columns),
+        StratifiedCV5GLMMEncoder(cols=categorical_columns),
         OneHotEncoder(cols=categorical_columns),
         TargetEncoder(cols=categorical_columns),
-        CV5TargetEncoder(cols=categorical_columns),
+        StratifiedCV5TargetEncoder(cols=categorical_columns),
     ]
 
 

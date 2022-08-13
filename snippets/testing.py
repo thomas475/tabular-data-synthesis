@@ -112,10 +112,10 @@ def get_encoder_list(categorical_columns, ordinal_columns):
             CatBoostEncoder(cols=categorical_columns),
             CountEncoder(cols=categorical_columns),
             GLMMEncoder(cols=categorical_columns),
-            CV5GLMMEncoder(cols=categorical_columns),
+            StratifiedCV5GLMMEncoder(cols=categorical_columns),
             # OneHotEncoder(cols=categorical_columns),
             TargetEncoder(cols=categorical_columns),
-            CV5TargetEncoder(cols=categorical_columns),
+            StratifiedCV5TargetEncoder(cols=categorical_columns),
         ]
 
         if ordinal_columns:
@@ -187,7 +187,29 @@ def test_encoders():
         print(ordinal_columns)
 
 
-test = [1, 2]
+from framework.encoders import MultiClassWrapper
 
-print(test)
-print(list(test))
+dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_car()
+
+deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
+deep_ordinal_encoder.fit(X, y)
+X, y = deep_ordinal_encoder.transform(X, y)
+categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+print('cat', categorical_columns)
+print('num', ordinal_columns)
+
+print(X.head(10))
+
+multienc = MultiClassWrapper(TargetEncoder(cols=categorical_columns))
+X_enc = multienc.fit_transform(X, y).head(10)
+print(X_enc)
+print(X_enc.columns)
+
+multienc = MultiClassTargetEncoder(categorical_columns)
+X_enc = multienc.fit_transform(X, y).head(10)
+print(X_enc)
+print(X_enc.columns)
+
+print(sorted(X_enc.columns))
