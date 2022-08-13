@@ -297,7 +297,7 @@ def tune_teacher(
                 ]
             )
 
-        original_column_order = X_train.columns
+        original_column_order = list(X_train.columns)
 
         index = X_train.index
         X_train = column_transformer.fit_transform(X_train.copy(), y_train.copy())
@@ -318,7 +318,7 @@ def tune_teacher(
         else:
             # our dataset is completely numerical now, so we update the columns
             categorical_columns = []
-            ordinal_columns = X_train.columns
+            ordinal_columns = list(X_train.columns)
             y_train = y_train.copy()
             y_train.name = len(ordinal_columns)
             y_test = y_test.copy()
@@ -827,7 +827,7 @@ def preprocess(encoder, scaler, X_train, X_test, y_train, y_test, categorical_co
             ]
         )
 
-    original_column_order = X_train.columns
+    original_column_order = list(X_train.columns)
     index = X_train.index
     X_train = column_transformer.fit_transform(X_train.copy(), y_train.copy())
     X_train = pd.DataFrame(X_train)
@@ -848,7 +848,7 @@ def preprocess(encoder, scaler, X_train, X_test, y_train, y_test, categorical_co
     else:
         # our dataset is completely numerical now, so we update the columns
         categorical_columns = []
-        ordinal_columns = X_train.columns
+        ordinal_columns = list(X_train.columns)
         y_train = y_train.copy()
         y_train.name = len(ordinal_columns)
         y_test = y_test.copy()

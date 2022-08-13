@@ -187,6 +187,7 @@ def test_encoders():
         print(ordinal_columns)
 
 
-test_encoders()
+test = [1, 2]
 
-import category_encoders.glmm
+print(test)
+print(list(test))
