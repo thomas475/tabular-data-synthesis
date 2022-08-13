@@ -1246,4 +1246,4 @@ def test_encoders_parallelized_run():
 
 
 if __name__ == '__main__':
-    test_encoders_parallelized_run()
+    start_parallelized_run()
