@@ -1032,24 +1032,24 @@ def parallelized_run(
 def start_parallelized_run():
     for load_set in [
         # load_adult,
-        # load_amazon,
+        # load_amazon, # dont use
         # load_bank_marketing,
         # load_census_income,
         # load_credit_approval,
-        # load_electricity,
-        # load_higgs,
+        # load_electricity, # dont use
+        # load_higgs, # dont use
         # load_kr_vs_kp,
-        load_car,
-        load_cmc,
-        load_covertype,
-        load_credit_g,
-        # load_jungle_chess,
-        load_vowel,
-        # load_kaggle_30_days_of_ml,
-        # load_brazilian_houses,
-        # load_california,
-        # load_diamonds,
-        # load_king,
+        # load_car, # TODO
+        # load_cmc, # TODO
+        # load_covertype, # TODO
+        # load_credit_g, # TODO
+        # load_jungle_chess, # dont use
+        # load_vowel, # TODO
+        load_kaggle_30_days_of_ml,
+        load_brazilian_houses,
+        load_california,
+        load_diamonds,
+        load_king,
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
@@ -1203,4 +1203,4 @@ def test_encoders_parallelized_run():
 
 
 if __name__ == '__main__':
-    test_encoders_parallelized_run()
+    start_parallelized_run()
