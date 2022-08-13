@@ -64,6 +64,9 @@ def load_dataset(dataset_name, dataset_task, dataset_id, target_column=None, dro
         X = dataset.drop(columns=target_attribute)
         y = dataset[target_attribute]
 
+    if dataset_task == REGRESSION:
+        y = y.astype(float)
+
     return dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns
 
 
