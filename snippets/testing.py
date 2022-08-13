@@ -187,9 +187,9 @@ def test_encoders():
         print(ordinal_columns)
 
 
-from framework.encoders import MultiClassWrapper
+from experiments.datasets import *
 
-dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_car()
+dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_diamonds()
 
 deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
 deep_ordinal_encoder.fit(X, y)
@@ -197,19 +197,16 @@ X, y = deep_ordinal_encoder.transform(X, y)
 categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
 ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
 
+X = X.head(500)
+y = y.head(500)
+
 print('cat', categorical_columns)
 print('num', ordinal_columns)
 
 print(X.head(10))
 
-multienc = MultiClassWrapper(TargetEncoder(cols=categorical_columns))
-X_enc = multienc.fit_transform(X, y).head(10)
-print(X_enc)
-print(X_enc.columns)
+encoder = CV5GLMMEncoder(cols=categorical_columns)
+encoder.fit_transform(X, y)
 
-multienc = MultiClassTargetEncoder(categorical_columns)
-X_enc = multienc.fit_transform(X, y).head(10)
-print(X_enc)
-print(X_enc.columns)
-
-print(sorted(X_enc.columns))
+encoder = GLMMEncoder(cols=categorical_columns)
+encoder.fit_transform(X, y)
