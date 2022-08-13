@@ -111,7 +111,12 @@ def get_test_metric_list(dataset_task):
 
 
 def get_test_generator_list(is_classification_task):
-    generator_list = []
+    generator_list = [
+        (TableGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': [50],  # default 500
+            'epochs': [1],  # default 300
+        })
+    ]
     if is_classification_task:
         generator_list.append(
             (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
