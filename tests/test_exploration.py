@@ -176,7 +176,7 @@ def get_all_generators_test(is_classification_task):
             # 'l2scale': default_l2_scales
         }),
         (DPCTGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
+            'batch_size': [50],  # default 500
             'epochs': [2],  # default 300
             # 'generator_lr': default_generator_learning_rates,
             # 'discriminator_lr': default_discriminator_learning_rates
