@@ -31,7 +31,7 @@ from framework.encoders import CollapseEncoder, GLMMEncoder, CV5GLMMEncoder, Str
 from framework.pipelines import AugmentedEstimation
 
 from tests.test_exploration import get_test_encoder_list, get_test_teacher, get_test_generator_list, \
-    get_test_student, get_test_metric_list
+    get_test_student, get_test_metric_list, get_all_generators_test
 
 from sdv.metrics.tabular import KSTest, CSTest
 from dython.nominal import compute_associations
@@ -1209,6 +1209,63 @@ def test_encoders_parallelized_run():
     )
     scaler = RobustScaler()
     generator_list = get_test_generator_list(is_classification_task=is_classification_task)
+    student = get_test_student(
+        is_classification_task=is_classification_task,
+        encoder=BinaryEncoder(cols=categorical_columns)
+    )
+    teacher = get_test_teacher(
+        is_classification_task=is_classification_task
+    )
+    metric_list = get_test_metric_list(dataset_task)
+    cv = 5
+    train_size = 500
+    n_samples_list = [0, 500, 1000]
+    random_state_list = [1]
+    verbose = 100
+    generator_timeout = 1000
+
+    parallelized_run(
+        experiment_directory=experiment_directory,
+        experiment_basename=experiment_basename,
+        is_classification_task=is_classification_task,
+        dataset=(dataset_name, X, y, categorical_columns, ordinal_columns),
+        encoder_list=encoder_list,
+        scaler=scaler,
+        generator_list=generator_list,
+        student=student,
+        teacher=teacher,
+        metric_list=metric_list,
+        cv=cv,
+        train_size=train_size,
+        n_samples_list=n_samples_list,
+        random_state_list=random_state_list,
+        verbose=verbose,
+        generator_timeout=generator_timeout
+    )
+
+
+def test_generators_parallelized_run():
+    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_diamonds()
+
+    experiment_directory = os.path.join(os.getcwd(), 'experiments', 'tests')
+    experiment_basename = 'exploration'
+    is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+
+    deep_ordinal_encoder = DeepOrdinalEncoder(
+        categorical_columns=categorical_columns,
+        discrete_target=is_classification_task
+    )
+    deep_ordinal_encoder.fit(X, y)
+    X, y = deep_ordinal_encoder.transform(X, y)
+    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+
+    encoder_list = [
+        GLMMEncoder(cols=categorical_columns),
+        CV5GLMMEncoder(cols=categorical_columns)
+    ]
+    scaler = RobustScaler()
+    generator_list = get_all_generators_test(is_classification_task=is_classification_task)
     student = get_test_student(
         is_classification_task=is_classification_task,
         encoder=BinaryEncoder(cols=categorical_columns)

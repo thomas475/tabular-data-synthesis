@@ -134,6 +134,83 @@ def get_test_generator_list(is_classification_task):
     return generator_list
 
 
+def get_all_generators_test(is_classification_task):
+    default_batch_sizes = [500]
+
+    generator_list = [
+        (PrivBNGenerator(is_classification_task=is_classification_task), {
+            # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
+            # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
+            'theta': [20]  # default 20
+        }),
+        (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
+            'default_distribution': [  # default 'parametric'
+                'univariate'
+            ]
+        }),
+        (TableGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [2],  # default 300
+            # 'l2scale': default_l2_scales
+        }),
+        (CTGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [2],  # default 300
+            # 'generator_lr': default_generator_learning_rates,
+            # 'discriminator_lr': default_discriminator_learning_rates
+        }),
+        (CopulaGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [2],  # default 300
+            # 'generator_lr': default_generator_learning_rates,
+            # 'discriminator_lr': default_discriminator_learning_rates
+        }),
+        (TVAEGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [2],  # default 300
+            # 'l2scale': default_l2_scales
+        }),
+        (MedGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 1000
+            'epochs': [2],  # default 2000
+            # 'l2scale': default_l2_scales
+        }),
+        (DPCTGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [2],  # default 300
+            # 'generator_lr': default_generator_learning_rates,
+            # 'discriminator_lr': default_discriminator_learning_rates
+        }),
+        (CTABGANGenerator(is_classification_task=is_classification_task), {
+            'batch_size': default_batch_sizes,  # default 500
+            'epochs': [1],  # default 1
+            # 'l2scale': default_l2_scales
+        })
+    ]
+    if is_classification_task:
+        generator_list.append(
+            (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
+                'k_neighbors': [5]  # default 5
+            })
+        )
+        generator_list.append(
+            (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
+                'batch_size': default_batch_sizes,  # default 128
+                'epochs': [2],  # default 300
+                # 'learning_rate': default_learning_rates
+            }),
+        )
+    else:
+        generator_list.append(
+            (WGANGPGenerator(is_classification_task=is_classification_task), {
+                'batch_size': default_batch_sizes,  # default 128
+                'epochs': [2],  # default 300
+                # 'learning_rate': default_learning_rates
+            }),
+        )
+    return generator_list
+
+
 # ENCODERS = [
 #     BinaryEncoder,
 #     CatBoostEncoder,
