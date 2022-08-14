@@ -523,6 +523,9 @@ class CopulaGANGenerator(BaseEstimator):
         # categorical columns need to be in string form
         train_data[categorical_column_titles] = train_data[categorical_column_titles].astype(str)
 
+        # ordinal columns need to be in float form
+        train_data[ordinal_column_titles] = train_data[ordinal_column_titles].astype(float)
+
         # column titles have to be strings
         self._column_titles = train_data.columns
         train_data.columns = [str(col) for col in self._column_titles]
