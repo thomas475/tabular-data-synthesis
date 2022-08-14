@@ -23,9 +23,8 @@ from experiments.datasets import *
 from framework.encoders import DeepOrdinalEncoder
 from framework.samplers import *
 
-from category_encoders import BinaryEncoder, CatBoostEncoder, CountEncoder, GLMMEncoder, OneHotEncoder, TargetEncoder
-from category_encoders.wrapper import PolynomialWrapper
-from framework.encoders import CollapseEncoder, CV5GLMMEncoder, StratifiedCV5GLMMEncoder, CV5TargetEncoder, \
+from category_encoders import BinaryEncoder, CatBoostEncoder, CountEncoder, OneHotEncoder, TargetEncoder
+from framework.encoders import CollapseEncoder, GLMMEncoder, CV5GLMMEncoder, StratifiedCV5GLMMEncoder, CV5TargetEncoder, \
     StratifiedCV5TargetEncoder, MultiClassCatBoostEncoder, MultiClassGLMMEncoder, MultiClassStratifiedCV5GLMMEncoder, \
     MultiClassTargetEncoder, MultiClassStratifiedCV5TargetEncoder
 
@@ -771,7 +770,7 @@ def train_generator(X_train, y_train, categorical_columns, ordinal_columns, gene
         estimator=augmented_student,
         param_grid=join_grids([('generator', generator_grid)]),
         scoring=metric_name,
-        error_score="raise",
+        # error_score="raise",
         refit=True,
         cv=ShuffleSplit(test_size=0.20, n_splits=1),
         verbose=verbose
@@ -798,7 +797,7 @@ def train_student(X_train, X_test, y_train, y_test, categorical_columns, student
         estimator=student,
         param_grid=student_grid,
         scoring=metric_name,
-        error_score="raise",
+        # error_score="raise",
         refit=True,
         cv=cv,
         verbose=verbose
@@ -920,18 +919,18 @@ def parallelized_run(
 
         for random_state in random_state_list:
 
+            tf.random.set_seed(random_state)
+            torch.manual_seed(random_state)
+            os.environ['PYTHONHASHSEED'] = str(random_state)
+            random.seed(random_state)
+            np.random.seed(random_state)
+
             if is_classification_task:
                 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, stratify=y)
             else:
                 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size)
 
             for metric in metric_list:
-
-                tf.random.set_seed(random_state)
-                torch.manual_seed(random_state)
-                os.environ['PYTHONHASHSEED'] = str(random_state)
-                random.seed(random_state)
-                np.random.seed(random_state)
 
                 teacher_permutations = itertools.product(
                     encoder_list + [None]

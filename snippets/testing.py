@@ -187,26 +187,31 @@ def test_encoders():
         print(ordinal_columns)
 
 
-from experiments.datasets import *
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import FitFailedWarning, ConvergenceWarning
 
-dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_diamonds()
 
-deep_ordinal_encoder = DeepOrdinalEncoder(categorical_columns=categorical_columns)
-deep_ordinal_encoder.fit(X, y)
-X, y = deep_ordinal_encoder.transform(X, y)
-categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import GridSearchCV
 
-X = X.head(500)
-y = y.head(500)
+name, task, X, y, cat, num = load_diamonds()
 
-print('cat', categorical_columns)
-print('num', ordinal_columns)
+X = BinaryEncoder(cols=cat).fit_transform(X, y)
+y = np.full(shape=(len(y), 1), fill_value=-10.0)
 
-print(X.head(10))
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=500, test_size=500)
 
-encoder = CV5GLMMEncoder(cols=categorical_columns)
-encoder.fit_transform(X, y)
+tuned_regressor = GridSearchCV(
+    estimator=DecisionTreeRegressor(),
+    param_grid={
+        'criterion': ['squared_error', 'poisson']
+    },
+    scoring='r2',
+    cv=2,
+    n_jobs=-1
+)
 
-encoder = GLMMEncoder(cols=categorical_columns)
-encoder.fit_transform(X, y)
+tuned_regressor.fit(X_train, y_train)
+
+print(tuned_regressor.score(X_test, y_test))
+
