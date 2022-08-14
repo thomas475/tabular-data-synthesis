@@ -1066,9 +1066,11 @@ def start_parallelized_run():
         # load_kr_vs_kp,
         # load_car, # TODO
         # load_cmc, # TODO
-        # load_covertype, # TODO
+        # load_connect_4, # TODO
+        # load_covertype, # TODO ?
         # load_credit_g, # TODO
         # load_jungle_chess, # dont use
+        # load_splice # TODO
         # load_vowel, # TODO
         load_kaggle_30_days_of_ml,
         load_brazilian_houses,
@@ -1149,9 +1151,11 @@ def test_parallelized_run():
         # load_kr_vs_kp,
         # load_car,
         # load_cmc,
+        # load_connect_4,
         # load_covertype,
         # load_credit_g,
         # load_jungle_chess,
+        # load_splice,
         # load_vowel,
         load_kaggle_30_days_of_ml,
         load_brazilian_houses,

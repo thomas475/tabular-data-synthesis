@@ -172,6 +172,14 @@ def load_cmc():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_connect_4():
+    dataset_name = 'connect_4'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 40668
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 # like in "Fast, Accurate, and Simple Models for Tabular Data via Augmented Distillation"
 def load_covertype():
     dataset_name = 'covertype'
@@ -197,6 +205,21 @@ def load_jungle_chess():
     dataset_id = 41027
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_splice():
+    dataset_name = 'splice'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 46
+
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id,
+        drop_columns=[
+            'Instance_name'
+        ]
+    )
 
 
 def load_vowel():
