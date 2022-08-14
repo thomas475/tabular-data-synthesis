@@ -152,7 +152,7 @@ def get_student(is_classification_task, encoder):
     else:
         return (DecisionTreeRegressor(), {
             'max_depth': [3, 4, 5, 6],
-            'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson']
+            'criterion': ['squared_error', 'friedman_mse', 'absolute_error']
         }, encoder)
 
 
