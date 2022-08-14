@@ -11,8 +11,8 @@ DATASET_FOLDER = os.path.join('experiments', 'datasets')
 PREPROCESSED_SUFFIX = '_preprocessed'
 
 
-BINARY_CLASSIFICATION = 'binary_classification'
-MULTICLASS_CLASSIFICATION = 'multiclass_classification'
+BINARY_CLASSIFICATION = 'binary'
+MULTICLASS_CLASSIFICATION = 'multiclass'
 REGRESSION = 'regression'
 
 

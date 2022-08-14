@@ -1079,7 +1079,7 @@ def start_parallelized_run():
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'runs')
-        experiment_basename = 'exploration'
+        experiment_basename = 'exploration_' + dataset_task
         is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
 
         deep_ordinal_encoder = DeepOrdinalEncoder(
@@ -1162,7 +1162,7 @@ def test_parallelized_run():
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
         experiment_directory = os.path.join(os.getcwd(), 'experiments', 'tests')
-        experiment_basename = 'exploration'
+        experiment_basename = 'exploration_' + dataset_task
         is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
 
         deep_ordinal_encoder = DeepOrdinalEncoder(
