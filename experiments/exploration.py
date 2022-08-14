@@ -1148,11 +1148,11 @@ def test_parallelized_run():
         # load_credit_g,
         # load_jungle_chess,
         # load_vowel,
-        # load_kaggle_30_days_of_ml,
+        load_kaggle_30_days_of_ml,
         load_brazilian_houses,
-        # load_california,
-        # load_diamonds,
-        # load_king,
+        load_california,
+        load_diamonds,
+        load_king,
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
@@ -1214,4 +1214,4 @@ def test_parallelized_run():
 
 
 if __name__ == '__main__':
-    test_parallelized_run()
+    start_parallelized_run()
