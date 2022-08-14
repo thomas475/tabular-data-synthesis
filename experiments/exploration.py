@@ -1070,7 +1070,7 @@ def start_parallelized_run():
         # load_covertype, # TODO ?
         # load_credit_g, # TODO
         # load_jungle_chess, # dont use
-        # load_splice # TODO
+        # load_splice # TODO ?
         # load_vowel, # TODO
         load_kaggle_30_days_of_ml,
         load_brazilian_houses,
