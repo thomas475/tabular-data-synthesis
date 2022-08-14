@@ -898,6 +898,7 @@ def parallelized_run(
         metric_list,
         cv,
         train_size,
+        max_test_size,
         n_samples_list,
         random_state_list,
         verbose,
@@ -911,6 +912,8 @@ def parallelized_run(
     log_messages = []
 
     dataset_name, X, y, categorical_columns, ordinal_columns = dataset
+
+    test_size = min(max_test_size, len(X) - train_size)
 
     completed_random_states = []
     interrupted = False
@@ -926,9 +929,9 @@ def parallelized_run(
             np.random.seed(random_state)
 
             if is_classification_task:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, stratify=y)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, test_size=test_size, stratify=y)
             else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_size, test_size=test_size)
 
             for metric in metric_list:
 
@@ -1105,6 +1108,7 @@ def start_parallelized_run():
         metric_list = get_metric_list(dataset_task)
         cv = 5
         train_size = 500
+        max_test_size = 50000
         n_samples_list = [
             0, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000, 8000, 9000, 10000
         ]
@@ -1125,6 +1129,7 @@ def start_parallelized_run():
             metric_list=metric_list,
             cv=cv,
             train_size=train_size,
+            max_test_size=max_test_size,
             n_samples_list=n_samples_list,
             random_state_list=random_state_list,
             verbose=verbose,
@@ -1186,6 +1191,7 @@ def test_parallelized_run():
         metric_list = get_metric_list(dataset_task)
         cv = 5
         train_size = 500
+        max_test_size = 500
         n_samples_list = [
             0, 500, 1000
         ]
@@ -1206,6 +1212,7 @@ def test_parallelized_run():
             metric_list=metric_list,
             cv=cv,
             train_size=train_size,
+            max_test_size=max_test_size,
             n_samples_list=n_samples_list,
             random_state_list=random_state_list,
             verbose=verbose,
