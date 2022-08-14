@@ -1266,7 +1266,7 @@ def test_generators_parallelized_run():
     ]
     scaler = RobustScaler()
     generator_list = get_all_generators_test(is_classification_task=is_classification_task)
-    student = get_test_student(
+    student = get_student(
         is_classification_task=is_classification_task,
         encoder=BinaryEncoder(cols=categorical_columns)
     )
