@@ -134,7 +134,7 @@ def get_test_generator_list(is_classification_task):
     return generator_list
 
 
-def get_all_generators_test(is_classification_task):
+def get_fast_tuned_generators(is_classification_task):
     default_batch_sizes = [500]
 
     generator_list = [
