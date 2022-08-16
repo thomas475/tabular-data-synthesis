@@ -1063,20 +1063,25 @@ def start_parallelized_run():
         # load_credit_approval,
         # load_electricity, # dont use
         # load_higgs, # dont use
+        # load_ibm_employee_performance, # TODO
         # load_kr_vs_kp,
-        # load_car, # TODO
-        # load_cmc, # TODO
-        # load_connect_4, # TODO
+        load_national_longitudinal_survey_binary,
+        # load_monks_problems_2, # TODO
+        # load_mushroom, # TODO
+        load_tic_tac_toe,
+        # load_car,
+        # load_cmc,
+        # load_connect_4,
         # load_covertype, # TODO ?
-        # load_credit_g, # TODO
+        # load_credit_g,
         # load_jungle_chess, # dont use
         # load_splice # TODO ?
-        # load_vowel, # TODO
-        load_kaggle_30_days_of_ml,
-        load_brazilian_houses,
-        load_california,
-        load_diamonds,
-        load_king,
+        # load_vowel,
+        # load_kaggle_30_days_of_ml,
+        # load_brazilian_houses,
+        # load_california,
+        # load_diamonds,
+        # load_king,
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 

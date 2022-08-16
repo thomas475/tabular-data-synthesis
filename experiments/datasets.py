@@ -148,10 +148,57 @@ def load_higgs():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_ibm_employee_performance():
+    dataset_name = 'ibm_employee_performance'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 43897
+
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id,
+        drop_columns=[
+            'EmployeeNumber'
+        ]
+    )
+
+
 def load_kr_vs_kp():
     dataset_name = 'kr_vs_kp'
     dataset_task = BINARY_CLASSIFICATION
     dataset_id = 3
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_national_longitudinal_survey_binary():
+    dataset_name = 'national_longitudinal_survey_binary'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 43892
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_monks_problems_2():
+    dataset_name = 'monks_problems_2'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 334
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_mushroom():
+    dataset_name = 'mushroom'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 43922
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_tic_tac_toe():
+    dataset_name = 'tic_tac_toe'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 50
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
