@@ -98,7 +98,7 @@ def get_encoder_list(task, categorical_columns, ordinal_columns):
                 TargetEncoder(cols=categorical_columns),
                 StratifiedCV5TargetEncoder(cols=categorical_columns)
             ])
-        if task == MULTICLASS_CLASSIFICATION:
+        elif task == MULTICLASS_CLASSIFICATION:
             encoder_list.extend([
                 MultiClassCatBoostEncoder(cols=categorical_columns),
                 MultiClassGLMMEncoder(cols=categorical_columns),
