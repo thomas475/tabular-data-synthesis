@@ -30,9 +30,6 @@ from framework.encoders import CollapseEncoder, GLMMEncoder, CV5GLMMEncoder, Str
 
 from framework.pipelines import AugmentedEstimation
 
-from tests.test_exploration import get_test_encoder_list, get_test_teacher, get_test_generator_list, \
-    get_test_student, get_test_metric_list, get_fast_tuned_generators
-
 from sdv.metrics.tabular import KSTest, CSTest
 from dython.nominal import compute_associations
 from framework.evaluation import calculate_dcr_nndr, calculate_jsd_wd
