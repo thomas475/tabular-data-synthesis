@@ -187,74 +187,64 @@ def test_encoders():
         print(ordinal_columns)
 
 
-from sklearn.compose import ColumnTransformer
-from framework.pipelines import AugmentedEstimation
-from sklearn.tree import DecisionTreeRegressor
+from lightgbm import LGBMClassifier, Dataset
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 
-dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_connect_4()
+result_frame = pd.DataFrame()
 
-experiment_directory = os.path.join(os.getcwd(), 'experiments', 'tests')
-experiment_basename = 'exploration_' + dataset_task
-is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+for load_set in [
+    load_ibm_employee_performance,
+    load_monks_problems_2,
+    load_mushroom,
+    load_national_longitudinal_survey_binary,
+    load_tic_tac_toe,
+    load_adult,
+    load_census_income,
+    load_credit_approval,
+    load_kr_vs_kp
+]:
+    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
-deep_ordinal_encoder = DeepOrdinalEncoder(
-    categorical_columns=categorical_columns,
-    discrete_target=is_classification_task
-)
-deep_ordinal_encoder.fit(X, y)
-X, y = deep_ordinal_encoder.transform(X, y)
-categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+    is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
 
-encoder = BinaryEncoder(cols=categorical_columns)
-scaler = RobustScaler()
+    deep_ordinal_encoder = DeepOrdinalEncoder(
+        categorical_columns=categorical_columns,
+        discrete_target=is_classification_task
+    )
+    deep_ordinal_encoder.fit(X, y)
+    X, y = deep_ordinal_encoder.transform(X, y)
+    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=500, test_size=500)
+    train_size = 500
+    max_test_size = 5000
+    test_size = min(len(X) - train_size, max_test_size)
 
-column_transformer = ColumnTransformer(
-    [
-        ("scaler", scaler, ordinal_columns.copy()),
-        ("encoder", encoder, categorical_columns.copy())
-    ]
-)
+    results = []
+    for random_state in range(0, 10):
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            train_size=train_size,
+            test_size=test_size,
+            stratify=y,
+            random_state=random_state
+        )
 
-original_column_order = list(X_train.columns)
+        model = LGBMClassifier()
+        model.fit(X_train, y_train, categorical_feature=categorical_columns)
 
-index = X_train.index
-X_train = column_transformer.fit_transform(X_train.copy(), y_train.copy())
-X_train = pd.DataFrame(X_train)
-X_train.index = index
+        results.append(f1_score(y_test, model.predict(X_test)))
 
-index = X_test.index
-X_test = column_transformer.transform(X_test.copy())
-X_test = pd.DataFrame(X_test)
-X_test.index = index
+    result_frame = result_frame.append(
+        {
+            'dataset': dataset_name[:10],
+            'mean': str(np.sum(results) / len(results)),
+            'std': str(np.std(results))
+        },
+        ignore_index=True
+    )
 
-# our dataset is completely numerical now, so we update the columns
-categorical_columns = []
-ordinal_columns = list(X_train.columns)
-y_train = y_train.copy()
-y_train.name = len(ordinal_columns)
-y_test = y_test.copy()
-y_test.name = len(ordinal_columns)
+with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    print(result_frame)
 
-generator = CopulaGANGenerator(is_classification_task=True, batch_size=500, epochs=1)
-tuned_student = DecisionTreeRegressor(max_depth=5)
-student_encoder = BinaryEncoder(cols=categorical_columns)
-
-train_size = 500
-
-# tune the generator
-augmented_student = AugmentedEstimation(
-    generator=generator,
-    estimator=tuned_student,
-    n_samples=train_size,
-    categorical_columns=categorical_columns,
-    ordinal_columns=ordinal_columns,
-    encoder=student_encoder
-)
-
-# X_train[categorical_columns] = X_train[categorical_columns].astype('category')
-# X_train[ordinal_columns] = X_train[ordinal_columns].astype('float')
-
-augmented_student.fit(X_train, y_train)

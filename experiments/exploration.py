@@ -1060,12 +1060,12 @@ def start_parallelized_run():
         # load_credit_approval,
         # load_electricity, # dont use
         # load_higgs, # dont use
-        # load_ibm_employee_performance, # TODO
+        # load_ibm_employee_performance,
         # load_kr_vs_kp,
-        load_national_longitudinal_survey_binary,
-        # load_monks_problems_2, # TODO
-        # load_mushroom, # TODO
-        load_tic_tac_toe,
+        # load_national_longitudinal_survey_binary,
+        # load_monks_problems_2,
+        load_mushroom, # TODO
+        # load_tic_tac_toe,
         # load_car,
         # load_cmc,
         # load_connect_4,
