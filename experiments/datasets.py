@@ -171,10 +171,26 @@ def load_kr_vs_kp():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_law_school_admission_binary():
+    dataset_name = 'law_school_admission_binary'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 43890
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 def load_national_longitudinal_survey_binary():
     dataset_name = 'national_longitudinal_survey_binary'
     dataset_task = BINARY_CLASSIFICATION
     dataset_id = 43892
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_monks_problems_1():
+    dataset_name = 'monks_problems_1'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 333
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
@@ -191,6 +207,30 @@ def load_mushroom():
     dataset_name = 'mushroom'
     dataset_task = BINARY_CLASSIFICATION
     dataset_id = 43922
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_mv():
+    dataset_name = 'mv'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 881
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_nursery():
+    dataset_name = 'nursery'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 959
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_sf_police_incidents():
+    dataset_name = 'sf_police_incidents'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 42344
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 

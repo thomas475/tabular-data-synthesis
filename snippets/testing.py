@@ -190,61 +190,95 @@ def test_encoders():
 from lightgbm import LGBMClassifier, Dataset
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 
-result_frame = pd.DataFrame()
 
-for load_set in [
-    load_ibm_employee_performance,
-    load_monks_problems_2,
-    load_mushroom,
-    load_national_longitudinal_survey_binary,
-    load_tic_tac_toe,
-    load_adult,
-    load_census_income,
-    load_credit_approval,
-    load_kr_vs_kp
-]:
-    dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
+def test_teacher():
+    result_frame = pd.DataFrame()
 
-    is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+    for load_set in [
+        load_ibm_employee_performance,
+        load_monks_problems_2,
+        load_mushroom,
+        load_national_longitudinal_survey_binary,
+        load_tic_tac_toe,
+        load_adult,
+        load_census_income,
+        load_credit_approval,
+        load_kr_vs_kp
+    ]:
+        dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
-    deep_ordinal_encoder = DeepOrdinalEncoder(
-        categorical_columns=categorical_columns,
-        discrete_target=is_classification_task
-    )
-    deep_ordinal_encoder.fit(X, y)
-    X, y = deep_ordinal_encoder.transform(X, y)
-    categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
-    ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
+        is_classification_task = dataset_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
 
-    train_size = 500
-    max_test_size = 5000
-    test_size = min(len(X) - train_size, max_test_size)
+        deep_ordinal_encoder = DeepOrdinalEncoder(
+            categorical_columns=categorical_columns,
+            discrete_target=is_classification_task
+        )
+        deep_ordinal_encoder.fit(X, y)
+        X, y = deep_ordinal_encoder.transform(X, y)
+        categorical_columns = deep_ordinal_encoder.transform_column_titles(categorical_columns)
+        ordinal_columns = deep_ordinal_encoder.transform_column_titles(ordinal_columns)
 
-    results = []
-    for random_state in range(0, 10):
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            train_size=train_size,
-            test_size=test_size,
-            stratify=y,
-            random_state=random_state
+        train_size = 500
+        max_test_size = 5000
+        test_size = min(len(X) - train_size, max_test_size)
+
+        results = []
+        for random_state in range(0, 10):
+            X_train, X_test, y_train, y_test = train_test_split(
+                X,
+                y,
+                train_size=train_size,
+                test_size=test_size,
+                stratify=y,
+                random_state=random_state
+            )
+
+            model = LGBMClassifier()
+            model.fit(X_train, y_train, categorical_feature=categorical_columns)
+
+            results.append(f1_score(y_test, model.predict(X_test)))
+
+        result_frame = result_frame.append(
+            {
+                'dataset': dataset_name[:10],
+                'mean': str(np.sum(results) / len(results)),
+                'std': str(np.std(results))
+            },
+            ignore_index=True
         )
 
-        model = LGBMClassifier()
-        model.fit(X_train, y_train, categorical_feature=categorical_columns)
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(result_frame)
 
-        results.append(f1_score(y_test, model.predict(X_test)))
 
-    result_frame = result_frame.append(
-        {
-            'dataset': dataset_name[:10],
-            'mean': str(np.sum(results) / len(results)),
-            'std': str(np.std(results))
-        },
-        ignore_index=True
-    )
+dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_dataset(
+    dataset_name='bla',
+    dataset_task=BINARY_CLASSIFICATION,
+    dataset_id=42178,
+    categorical_columns=[
+        'gender',
+        'SeniorCitizen',
+        'Partner',
+        'Dependents',
+        'PhoneService',
+        'MultipleLines',
+        'InternetService',
+        'OnlineSecurity',
+        'OnlineBackup',
+        'DeviceProtection',
+        'TechSupport',
+        'StreamingTV',
+        'StreamingMovies',
+        'Contract',
+        'PaperlessBilling',
+        'PaymentMethod',
+    ]
+)
 
-with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    print(result_frame)
+print(X)
+print(y)
+print(categorical_columns)
+print(ordinal_columns)
 
+print(len(categorical_columns))
+print(len(ordinal_columns))

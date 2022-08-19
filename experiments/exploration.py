@@ -1062,10 +1062,15 @@ def start_parallelized_run():
         # load_higgs, # dont use
         # load_ibm_employee_performance,
         # load_kr_vs_kp,
+        load_law_school_admission_binary, # TODO
         # load_national_longitudinal_survey_binary,
+        load_monks_problems_1, # TODO
         # load_monks_problems_2,
-        load_mushroom, # TODO
+        # load_mushroom, # dont use
+        # load_mv, # TODO
+        # load_nursery, # TODO
         # load_tic_tac_toe,
+        load_sf_police_incidents, # TODO
         # load_car,
         # load_cmc,
         # load_connect_4,
