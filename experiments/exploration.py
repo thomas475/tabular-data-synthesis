@@ -167,81 +167,81 @@ def get_generator_list(is_classification_task):
     default_epochs = [150]
 
     generator_list = [
-        (PrivBNGenerator(is_classification_task=is_classification_task), {
-            # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
-            # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
-            'theta': [15, 20, 30] # default 20
-        }),
-        (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
-            'default_distribution': [  # default 'parametric'
-                'univariate',
-                # Let ``copulas`` select the optimal univariate distribution. This may result in non-parametric models being used.
-                'parametric',
-                # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to parametric distributions only.
-                'bounded',
-                # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to bounded distributions only.
-            ]
-        }),
-        (TableGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': [300],  # default 300
-            # 'l2scale': default_l2_scales
-        }),
-        (CTGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': [200],  # default 300
-            # 'generator_lr': default_generator_learning_rates,
-            # 'discriminator_lr': default_discriminator_learning_rates
-        }),
-        (CopulaGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': [300],  # default 300
-            # 'generator_lr': default_generator_learning_rates,
-            # 'discriminator_lr': default_discriminator_learning_rates
-        }),
+        # (PrivBNGenerator(is_classification_task=is_classification_task), {
+        #     # a noisy distribution is θ-useful if the ratio of average scale of information to average scale of noise is no less than θ
+        #     # in a k-degree bayesian network theta as a parameter is fixed and a corresponding k is calculated
+        #     'theta': [15, 20, 30] # default 20
+        # }),
+        # (GaussianCopulaGenerator(is_classification_task=is_classification_task), {
+        #     'default_distribution': [  # default 'parametric'
+        #         'univariate',
+        #         # Let ``copulas`` select the optimal univariate distribution. This may result in non-parametric models being used.
+        #         'parametric',
+        #         # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to parametric distributions only.
+        #         'bounded',
+        #         # Let ``copulas`` select the optimal univariate distribution, but restrict the selection to bounded distributions only.
+        #     ]
+        # }),
+        # (TableGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': default_batch_sizes,  # default 500
+        #     'epochs': [300],  # default 300
+        #     # 'l2scale': default_l2_scales
+        # }),
+        # (CTGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': default_batch_sizes,  # default 500
+        #     'epochs': [200],  # default 300
+        #     # 'generator_lr': default_generator_learning_rates,
+        #     # 'discriminator_lr': default_discriminator_learning_rates
+        # }),
+        # (CopulaGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': default_batch_sizes,  # default 500
+        #     'epochs': [300],  # default 300
+        #     # 'generator_lr': default_generator_learning_rates,
+        #     # 'discriminator_lr': default_discriminator_learning_rates
+        # }),
         (TVAEGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': [300],  # default 300
+            'epochs': [800],  # default 300
             # 'l2scale': default_l2_scales
         }),
-        (MedGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 1000
-            'epochs': [200],  # default 2000
-            # 'l2scale': default_l2_scales
-        }),
-        (DPCTGANGenerator(is_classification_task=is_classification_task), {
-            'batch_size': default_batch_sizes,  # default 500
-            'epochs': [200],  # default 300
-            # 'generator_lr': default_generator_learning_rates,
-            # 'discriminator_lr': default_discriminator_learning_rates
-        }),
+        # (MedGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': default_batch_sizes,  # default 1000
+        #     'epochs': [200],  # default 2000
+        #     # 'l2scale': default_l2_scales
+        # }),
+        # (DPCTGANGenerator(is_classification_task=is_classification_task), {
+        #     'batch_size': default_batch_sizes,  # default 500
+        #     'epochs': [200],  # default 300
+        #     # 'generator_lr': default_generator_learning_rates,
+        #     # 'discriminator_lr': default_discriminator_learning_rates
+        # }),
         (CTABGANGenerator(is_classification_task=is_classification_task), {
             'batch_size': default_batch_sizes,  # default 500
-            'epochs': [50],  # default 1
+            'epochs': [100],  # default 1
             # 'l2scale': default_l2_scales
         })
     ]
-    if is_classification_task:
-        generator_list.append(
-            (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
-                'k_neighbors': [4, 5, 6, 7]  # default 5
-            })
-        )
-        generator_list.append(
-            (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
-                'batch_size': default_batch_sizes,  # default 128
-                'epochs': [200],  # default 300
-                # 'learning_rate': default_learning_rates
-            }),
-        )
-    else:
-        generator_list.append(
-            (WGANGPGenerator(is_classification_task=is_classification_task), {
-                'batch_size': default_batch_sizes,  # default 128
-                'epochs': [200],  # default 300
-                # 'learning_rate': default_learning_rates
-            }),
-        )
+    # if is_classification_task:
+    #     generator_list.append(
+    #         (ProportionalSMOTEGenerator(is_classification_task=is_classification_task), {
+    #             'k_neighbors': [4, 5, 6, 7]  # default 5
+    #         })
+    #     )
+    #     generator_list.append(
+    #         (ProportionalCWGANGPGenerator(is_classification_task=is_classification_task), {
+    #             'batch_size': default_batch_sizes,  # default 128
+    #             'epochs': [200],  # default 300
+    #             # 'learning_rate': default_learning_rates
+    #         }),
+    #     )
+    # else:
+    #     generator_list.append(
+    #         (WGANGPGenerator(is_classification_task=is_classification_task), {
+    #             'batch_size': default_batch_sizes,  # default 128
+    #             'epochs': [200],  # default 300
+    #             # 'learning_rate': default_learning_rates
+    #         }),
+    #     )
     return generator_list
 
 
@@ -1053,24 +1053,24 @@ def parallelized_run(
 
 def start_parallelized_run():
     for load_set in [
-        # load_adult,
+        load_adult,
         # load_amazon, # dont use
-        # load_bank_marketing,
-        # load_census_income,
-        # load_credit_approval,
+        load_bank_marketing,
+        load_census_income,
+        load_credit_approval,
         # load_electricity, # dont use
         # load_higgs, # dont use
-        # load_ibm_employee_performance,
-        # load_kr_vs_kp,
-        load_law_school_admission_binary, # TODO
-        # load_national_longitudinal_survey_binary,
-        load_monks_problems_1, # TODO
-        # load_monks_problems_2,
+        load_ibm_employee_performance,
+        load_kr_vs_kp,
+        load_law_school_admission_binary,
+        load_national_longitudinal_survey_binary,
+        load_monks_problems_1,
+        load_monks_problems_2,
         # load_mushroom, # dont use
-        # load_mv, # TODO
-        # load_nursery, # TODO
-        # load_tic_tac_toe,
-        load_sf_police_incidents, # TODO
+        load_mv,
+        load_nursery,
+        load_tic_tac_toe,
+        # load_sf_police_incidents, # TODO ?
         # load_car,
         # load_cmc,
         # load_connect_4,
