@@ -1123,7 +1123,7 @@ def start_parallelized_run():
         ]
         random_state_list = [1, 2, 3, 4, 5]
         verbose = 100
-        generator_timeout = 2700
+        generator_timeout = 3600
 
         parallelized_run(
             experiment_directory=experiment_directory,
