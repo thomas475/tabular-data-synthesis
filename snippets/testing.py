@@ -251,34 +251,35 @@ def test_teacher():
         print(result_frame)
 
 
-dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_dataset(
-    dataset_name='bla',
-    dataset_task=BINARY_CLASSIFICATION,
-    dataset_id=42178,
-    categorical_columns=[
-        'gender',
-        'SeniorCitizen',
-        'Partner',
-        'Dependents',
-        'PhoneService',
-        'MultipleLines',
-        'InternetService',
-        'OnlineSecurity',
-        'OnlineBackup',
-        'DeviceProtection',
-        'TechSupport',
-        'StreamingTV',
-        'StreamingMovies',
-        'Contract',
-        'PaperlessBilling',
-        'PaymentMethod',
+grid_1 = {
+    'default_distribution': [
+        'univariate',
+        'parametric',
+        'bounded',
     ]
-)
+}
+grid_2 = {
+    'batch_size': [50],
+    'epochs': [300]
+}
+grid_3 = {
+    'batch_size': [50],
+    'epochs': [300],
+    'default_distribution': [
+        'univariate',
+        'parametric',
+        'bounded',
+    ]
+}
 
-print(X)
-print(y)
-print(categorical_columns)
-print(ordinal_columns)
 
-print(len(categorical_columns))
-print(len(ordinal_columns))
+def grid_permutation_count(grid):
+    permutation_count = 1
+    for key in grid:
+        permutation_count = permutation_count * len(grid[key])
+    return permutation_count
+
+
+print(grid_permutation_count(grid_1))
+print(grid_permutation_count(grid_2))
+print(grid_permutation_count(grid_3))

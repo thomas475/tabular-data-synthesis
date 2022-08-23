@@ -65,6 +65,20 @@ def time_limit(seconds):
         signal.alarm(0)
 
 
+def grid_permutation_count(grid):
+    permutation_count = 1
+    for key in grid:
+        permutation_count = permutation_count * len(grid[key])
+    return permutation_count
+
+
+def flatten_grid(grid):
+    flattened_grid = {}
+    for key in grid:
+        flattened_grid[key] = grid[key][0]
+    return flattened_grid
+
+
 def join_grids(grids):
     joined_grid = {}
     for grid_name, grid in grids:
@@ -753,35 +767,50 @@ def train_generator(X_train, y_train, categorical_columns, ordinal_columns, gene
                     student_encoder, metric_name, train_size, timeout, verbose):
     generator_tuning_start_time = timeit.default_timer()
 
-    # tune the generator
-    augmented_student = AugmentedEstimation(
-        generator=generator,
-        estimator=tuned_student,
-        n_samples=train_size,
-        categorical_columns=categorical_columns,
-        ordinal_columns=ordinal_columns,
-        encoder=student_encoder
-    )
+    # if the number of different grid parameter permutations is bigger than 2, do a grid search
+    if grid_permutation_count(generator_grid) >= 2:
 
-    tuned_augmented_student = GridSearchCV(
-        estimator=augmented_student,
-        param_grid=join_grids([('generator', generator_grid)]),
-        scoring=metric_name,
-        # error_score="raise",
-        refit=True,
-        cv=ShuffleSplit(test_size=0.20, n_splits=1),
-        verbose=verbose
-    )
+        # tune the generator
+        augmented_student = AugmentedEstimation(
+            generator=generator,
+            estimator=tuned_student,
+            n_samples=train_size,
+            categorical_columns=categorical_columns,
+            ordinal_columns=ordinal_columns,
+            encoder=student_encoder
+        )
 
-    if platform.system() == 'Linux':
-        with time_limit(timeout):
+        tuned_augmented_student = GridSearchCV(
+            estimator=augmented_student,
+            param_grid=join_grids([('generator', generator_grid)]),
+            scoring=metric_name,
+            # error_score="raise",
+            refit=True,
+            cv=ShuffleSplit(test_size=0.20, n_splits=1),
+            verbose=verbose
+        )
+
+        if platform.system() == 'Linux':
+            with time_limit(timeout):
+                tuned_augmented_student.fit(X=X_train.copy(), y=y_train.copy())
+        else:
             tuned_augmented_student.fit(X=X_train.copy(), y=y_train.copy())
+
+        tuned_generator = tuned_augmented_student.best_estimator_.get_generator()
+
     else:
-        tuned_augmented_student.fit(X=X_train.copy(), y=y_train.copy())
+
+        tuned_generator = copy.deepcopy(generator)
+
+        tuned_generator.set_params(**flatten_grid(generator_grid))
+
+        if platform.system() == 'Linux':
+            with time_limit(timeout):
+                tuned_generator.fit(X=X_train.copy(), y=y_train.copy(), categorical_columns=categorical_columns, ordinal_columns=ordinal_columns)
+        else:
+            tuned_generator.fit(X=X_train.copy(), y=y_train.copy(), categorical_columns=categorical_columns, ordinal_columns=ordinal_columns)
 
     generator_tuning_time = timeit.default_timer() - generator_tuning_start_time
-
-    tuned_generator = tuned_augmented_student.best_estimator_.get_generator()
 
     return tuned_generator, generator_tuning_time
 
