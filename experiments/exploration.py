@@ -1051,12 +1051,12 @@ def parallelized_run(
         sys.exit(0)
 
 
-def start_parallelized_run():
+def start_parallelized_run(random_state_list=None):
     for load_set in [
-        load_adult,
+        # load_adult,
         # load_amazon, # dont use
-        load_bank_marketing,
-        load_census_income,
+        # load_bank_marketing,
+        # load_census_income,
         load_credit_approval,
         # load_electricity, # dont use
         # load_higgs, # dont use
@@ -1121,7 +1121,8 @@ def start_parallelized_run():
         n_samples_list = [
             0, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000, 8000, 9000, 10000
         ]
-        random_state_list = [1, 2, 3, 4, 5]
+        if random_state_list is None:
+            random_state_list = [1, 2, 3, 4, 5]
         verbose = 100
         generator_timeout = 3600
 
@@ -1147,4 +1148,19 @@ def start_parallelized_run():
 
 
 if __name__ == '__main__':
-    start_parallelized_run()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='An exploration of different encoders with different generators on different datasets.'
+    )
+    parser.add_argument(
+        "--random_states",  # name on the CLI - drop the `--` for positional/required parameters
+        help="Select the explored random_states",
+        nargs="*",  # 0 or more values expected => creates a list
+        type=int,
+        default=None,  # default if nothing is provided
+    )
+
+    args = parser.parse_args()
+
+    start_parallelized_run(args.random_states)
