@@ -1148,6 +1148,9 @@ def start_parallelized_run(random_state_list=None):
 
 
 if __name__ == '__main__':
+    # disable cuda
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
     import argparse
 
     parser = argparse.ArgumentParser(
