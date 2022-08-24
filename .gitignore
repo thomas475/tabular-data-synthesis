@@ -1,8 +1,9 @@
 # file: ~/.gitignore_global
 .idea
-
+__pycache__
+cache
+catboost_info
 data
-
 experiments/datasets
 experiments/preliminaries
 experiments/runs
