@@ -1,14 +1,10 @@
 # file: ~/.gitignore_global
 .idea
-framework/__pycache__
-catboost_info
-cache
+
 data
-experiments/cache
+
 experiments/datasets
 experiments/preliminaries
 experiments/runs
 experiments/tests
-tests/cache
-tests/__pycache__
 dragan_test
