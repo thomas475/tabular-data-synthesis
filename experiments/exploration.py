@@ -1086,12 +1086,15 @@ def start_parallelized_run(random_state_list=None):
         # load_amazon, # dont use
         # load_bank_marketing,
         # load_census_income,
+        # load_compass, # TODO
         load_credit_approval,
         # load_electricity, # dont use
+        # load_eye_movements, # TODO
         # load_higgs, # dont use
         load_ibm_employee_performance,
+        # load_kdd_cup_09_upselling, # TODO
         load_kr_vs_kp,
-        load_law_school_admission_binary,
+        # load_law_school_admission_binary, # dont use
         load_national_longitudinal_survey_binary,
         load_monks_problems_1,
         load_monks_problems_2,

@@ -70,6 +70,11 @@ def load_dataset(dataset_name, dataset_task, dataset_id, target_column=None, dro
     return dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns
 
 
+# =================================================================================================================== #
+# ////////////////////////////////////////// BINARY CLASSIFICATION ////////////////////////////////////////////////// #
+# =================================================================================================================== #
+
+
 # like in "Fast, Accurate, and Simple Models for Tabular Data via Augmented Distillation" and many more
 def load_adult():
     dataset_name = 'adult'
@@ -110,6 +115,14 @@ def load_census_income():
     )
 
 
+def load_compass():
+    dataset_name = 'compass'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 44162
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 def load_credit_approval():
     dataset_name = 'credit_approval'
     dataset_task = BINARY_CLASSIFICATION
@@ -139,6 +152,14 @@ def load_electricity():
     )
 
 
+def load_eye_movements():
+    dataset_name = 'eye_movements'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 44157
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 # like in "Deep Neural Networks and Tabular Data: A Survey"
 def load_higgs():
     dataset_name = 'higgs'
@@ -161,6 +182,14 @@ def load_ibm_employee_performance():
             'EmployeeNumber'
         ]
     )
+
+
+def load_kdd_cup_09_upselling():
+    dataset_name = 'kdd_cup_09_upselling'
+    dataset_task = BINARY_CLASSIFICATION
+    dataset_id = 44158
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
 def load_kr_vs_kp():
@@ -241,6 +270,11 @@ def load_tic_tac_toe():
     dataset_id = 50
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+# =================================================================================================================== #
+# ////////////////////////////////////////// MULTICLASS CLASSIFICATION ////////////////////////////////////////////// #
+# =================================================================================================================== #
 
 
 def load_analcatdata_dmft():
@@ -346,6 +380,11 @@ def load_vowel():
     dataset_id = 307
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+# =================================================================================================================== #
+# ///////////////////////////////////////////////// REGRESSION ////////////////////////////////////////////////////// #
+# =================================================================================================================== #
 
 
 def load_bike_sharing_demand():
