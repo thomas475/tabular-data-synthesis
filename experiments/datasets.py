@@ -243,6 +243,14 @@ def load_tic_tac_toe():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_analcatdata_dmft():
+    dataset_name = 'analcatdata_dmft'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 469
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
 def load_car():
     dataset_name = 'car'
     dataset_task = MULTICLASS_CLASSIFICATION
@@ -257,6 +265,21 @@ def load_cmc():
     dataset_id = 23
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_collins():
+    dataset_name = 'collins'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 40971
+
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id,
+        drop_columns=[
+            'Text'
+        ]
+    )
 
 
 def load_connect_4():
@@ -281,6 +304,14 @@ def load_credit_g():
     dataset_name = 'credit_g'
     dataset_task = MULTICLASS_CLASSIFICATION
     dataset_id = 31
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_eucalyptus():
+    dataset_name = 'eucalyptus'
+    dataset_task = MULTICLASS_CLASSIFICATION
+    dataset_id = 188
 
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
@@ -317,19 +348,20 @@ def load_vowel():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
-def load_kaggle_30_days_of_ml():
-    dataset_name = 'kaggle_30_days_of_ml'
+def load_bike_sharing_demand():
+    dataset_name = 'bike_sharing_demand'
     dataset_task = REGRESSION
-    dataset_id = 43090
+    dataset_id = 44063
 
-    return load_dataset(
-        dataset_name=dataset_name,
-        dataset_task=dataset_task,
-        dataset_id=dataset_id,
-        drop_columns=[
-            'id'
-        ]
-    )
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_black_friday():
+    dataset_name = 'black_friday'
+    dataset_task = REGRESSION
+    dataset_id = 44057
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
 def load_brazilian_houses():
@@ -358,6 +390,21 @@ def load_diamonds():
     return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
 
 
+def load_kaggle_30_days_of_ml():
+    dataset_name = 'kaggle_30_days_of_ml'
+    dataset_task = REGRESSION
+    dataset_id = 43090
+
+    return load_dataset(
+        dataset_name=dataset_name,
+        dataset_task=dataset_task,
+        dataset_id=dataset_id,
+        drop_columns=[
+            'id'
+        ]
+    )
+
+
 # like in "CTAB-GAN+: Enhancing Tabular Data Synthesis"
 def load_king():
     dataset_name = 'king'
@@ -373,3 +420,43 @@ def load_king():
             'date'
         ]
     )
+
+
+def load_nyc_taxi_green_dec_2016():
+    dataset_name = 'nyc_taxi_green_dec_2016'
+    dataset_task = REGRESSION
+    dataset_id = 44065
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_online_news_popularity():
+    dataset_name = 'online_news_popularity'
+    dataset_task = REGRESSION
+    dataset_id = 44064
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_sensory():
+    dataset_name = 'sensory'
+    dataset_task = REGRESSION
+    dataset_id = 546
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_socmob():
+    dataset_name = 'socmob'
+    dataset_task = REGRESSION
+    dataset_id = 541
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
+
+
+def load_yprop_4_1():
+    dataset_name = 'yprop_4_1'
+    dataset_task = REGRESSION
+    dataset_id = 44054
+
+    return load_dataset(dataset_name=dataset_name, dataset_task=dataset_task, dataset_id=dataset_id)
