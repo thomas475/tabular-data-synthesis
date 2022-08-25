@@ -685,14 +685,14 @@ def tune_student(
             complete_ordinal_columns = ordinal_columns.copy() + [y_sampled_max.name]
 
         categorical_real_dataset = real_dataset[complete_categorical_columns]
-        ordinal_real_dataset = real_dataset[ordinal_columns]
+        ordinal_real_dataset = real_dataset[complete_ordinal_columns]
 
         for fold, (_, fold_indeces) in enumerate(kfold_split):
             synthetic_dataset = X_sampled_max.iloc[fold_indeces].copy()
             synthetic_dataset[y_sampled_max.name] = y_sampled_max.iloc[fold_indeces].copy()
 
             categorical_synthetic_dataset = synthetic_dataset[complete_categorical_columns]
-            ordinal_synthetic_dataset = synthetic_dataset[ordinal_columns]
+            ordinal_synthetic_dataset = synthetic_dataset[complete_ordinal_columns]
 
             # statistical evaluation
             if list(complete_ordinal_columns):
