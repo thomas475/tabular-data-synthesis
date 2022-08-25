@@ -1086,32 +1086,32 @@ def start_parallelized_run(random_state_list=None):
         # load_amazon, # dont use
         # load_bank_marketing,
         # load_census_income,
-        # load_compass, # TODO
-        load_credit_approval,
+        load_compass, # TODO
+        # load_credit_approval,
         # load_electricity, # dont use
-        # load_eye_movements, # TODO
+        load_eye_movements, # TODO
         # load_higgs, # dont use
-        load_ibm_employee_performance,
-        # load_kdd_cup_09_upselling, # TODO
-        load_kr_vs_kp,
+        # load_ibm_employee_performance,
+        load_kdd_cup_09_upselling, # TODO
+        # load_kr_vs_kp,
         # load_law_school_admission_binary, # dont use
-        load_national_longitudinal_survey_binary,
-        load_monks_problems_1,
-        load_monks_problems_2,
+        # load_national_longitudinal_survey_binary,
+        # load_monks_problems_1,
+        # load_monks_problems_2,
         # load_mushroom, # dont use
-        load_mv,
-        load_nursery,
-        load_tic_tac_toe,
+        # load_mv,
+        # load_nursery,
+        # load_tic_tac_toe,
         # load_sf_police_incidents, # TODO ?
 
-        # load_analcatdata_dmft, # TODO
+        load_analcatdata_dmft, # TODO
         # load_car,
         # load_cmc,
-        # load_collins, # TODO
+        load_collins, # TODO
         # load_connect_4,
         # load_covertype, # TODO ?
         # load_credit_g,
-        # load_eucalyptus, # TODO
+        load_eucalyptus, # TODO
         # load_jungle_chess, # dont use
         # load_splice # TODO ?
         # load_vowel,
@@ -1125,9 +1125,9 @@ def start_parallelized_run(random_state_list=None):
         # load_king,
         # load_nyc_taxi_green_dec_2016, # TODO
         # load_online_news_popularity, # TODO
-        # load_sensory, # TODO
+        load_sensory, # TODO
         # load_socmob, # TODO ?
-        # load_yprop_4_1, # TODO ?
+        load_yprop_4_1, # TODO ?
     ]:
         dataset_name, dataset_task, X, y, categorical_columns, ordinal_columns = load_set()
 
