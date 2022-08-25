@@ -718,8 +718,8 @@ def tune_student(
                 complete_ordinal_columns
             )
 
-            real_corr = compute_associations(real_dataset, nominal_columns=categorical_columns)
-            synthetic_corr = compute_associations(synthetic_dataset, nominal_columns=categorical_columns)
+            real_corr = compute_associations(real_dataset, nominal_columns=complete_categorical_columns)
+            synthetic_corr = compute_associations(synthetic_dataset, nominal_columns=complete_categorical_columns)
             diff_corr_performance = np.linalg.norm(real_corr - synthetic_corr)
 
             # privacy evaluation
