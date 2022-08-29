@@ -1086,13 +1086,13 @@ def start_parallelized_run(random_state_list=None):
         # load_amazon, # dont use
         # load_bank_marketing,
         # load_census_income,
-        load_compass, # TODO
+        # load_compass,
         # load_credit_approval,
         # load_electricity, # dont use
-        load_eye_movements, # TODO
+        # load_eye_movements,
         # load_higgs, # dont use
         # load_ibm_employee_performance,
-        load_kdd_cup_09_upselling, # TODO
+        # load_kdd_cup_09_upselling,
         # load_kr_vs_kp,
         # load_law_school_admission_binary, # dont use
         # load_national_longitudinal_survey_binary,
@@ -1104,10 +1104,10 @@ def start_parallelized_run(random_state_list=None):
         # load_tic_tac_toe,
         # load_sf_police_incidents, # TODO ?
 
-        load_analcatdata_dmft, # TODO
+        # load_analcatdata_dmft,
         # load_car,
         # load_cmc,
-        load_collins, # TODO
+        # load_collins,
         # load_connect_4,
         # load_covertype, # TODO ?
         # load_credit_g,
@@ -1116,16 +1116,16 @@ def start_parallelized_run(random_state_list=None):
         # load_splice # TODO ?
         # load_vowel,
 
-        # load_bike_sharing_demand, # TODO
-        # load_black_friday, # TODO
+        # load_bike_sharing_demand,
+        # load_black_friday,
         # load_brazilian_houses,
         # load_california,
         # load_diamonds,
         # load_kaggle_30_days_of_ml,
         # load_king,
-        # load_nyc_taxi_green_dec_2016, # TODO
-        # load_online_news_popularity, # TODO
-        load_sensory, # TODO
+        # load_nyc_taxi_green_dec_2016,
+        # load_online_news_popularity,
+        load_sensory,
         # load_socmob, # TODO ?
         load_yprop_4_1, # TODO ?
     ]:
