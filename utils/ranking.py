@@ -21,6 +21,7 @@ from tkinter.filedialog import askdirectory
 import numpy as np
 import pandas as pd
 
+
 # a and b are the arrays to be compared
 # n is the number of evaluations
 # n1 is the number of samples used for training
@@ -37,7 +38,7 @@ def adjusted_ttest(a, b, n, n1, n2):
     # compute the t_static
     with np.errstate(divide='ignore', invalid='ignore'):
         t_static = np.divide(d_bar, np.sqrt(sigma2_mod))
-    #Compute p-value and plot the results
+    # Compute p-value and plot the results
     p_value = ((1 - t.cdf(np.abs(t_static), n - 1)) * 2.0)
 
     return t_static, p_value
@@ -87,7 +88,7 @@ def get_first_file_path_in_directory_with_extension(directory_path, extension):
 
     if not first_csv_file:
         print('no csv file found')
-        exit(1)
+        # exit(1)
 
     return first_csv_file
 
@@ -172,7 +173,8 @@ def preprocess(dataset):
 
     # remove duplicates of baseline student
     baseline_student_results = dataset[((dataset.generator.isnull()) & (dataset.teacher.isnull()))]
-    baseline_student_results = baseline_student_results.groupby(['encoder', 'optimization_metric', 'random_state']).first().reset_index()
+    baseline_student_results = baseline_student_results.groupby(
+        ['encoder', 'optimization_metric', 'random_state']).first().reset_index()
     dataset = dataset[~((dataset.generator.isnull()) & (dataset.teacher.isnull()))]
     dataset = dataset.append(baseline_student_results).reset_index(drop=True)
     dataset = dataset.fillna(value=np.nan)
@@ -244,8 +246,10 @@ def group_runs(dataset):
     runs = {}
     optimization_metrics = get_unique_values_of_column(dataset, 'optimization_metric')
     for optimization_metric in optimization_metrics:
-        machine_learning_efficacy_results = dataset[dataset.generated_fold.isnull() & (dataset.optimization_metric == optimization_metric)]
-        statistical_results = dataset[dataset.generated_fold.notnull() & (dataset.optimization_metric == optimization_metric)]
+        machine_learning_efficacy_results = dataset[
+            dataset.generated_fold.isnull() & (dataset.optimization_metric == optimization_metric)]
+        statistical_results = dataset[
+            dataset.generated_fold.notnull() & (dataset.optimization_metric == optimization_metric)]
 
         runs[optimization_metric] = {k: list(v) for k, v in machine_learning_efficacy_results.groupby([
             'encoder', 'generator', 'teacher'
@@ -274,7 +278,7 @@ def calculate_ranks(run, dataset):
 
     for metric in run:
         mapping = {i: k for i, k in enumerate(run[metric].keys())}
-        evaluations = {i:v for i,(k,v) in enumerate(run[metric].items())}
+        evaluations = {i: v for i, (k, v) in enumerate(run[metric].items())}
 
         # pairwise comparison matrix
         pcm = np.ndarray((len(evaluations), len(evaluations)))
@@ -386,7 +390,6 @@ def calculate_ranks_of_ranks(ranks):
             i = i + counts
         rank_mapping = dict(zip(sorted_rank_values, ranking))
 
-
         # sorted_total_rank = dict(sorted(total_rank.items(), key=lambda x: (x[1], x[0])))
         # sorted_total_rank = dict(zip(sorted_total_rank.keys(), range(len(sorted_total_rank))))
         # relative_rank = dict(sorted(sorted_total_rank.items(), key=lambda x: (x[0], x[1])))
@@ -400,7 +403,8 @@ def calculate_ranks_of_ranks(ranks):
 def store_ranks(ranked_runs, base_directory, dataset):
     for metric in ranked_runs:
         Path(os.path.join(base_directory, metric)).mkdir(parents=True, exist_ok=True)
-        transformed_run = dict(zip([' '.join([str(c) for c in k]) for k in ranked_runs[metric].keys()], ranked_runs[metric].values()))
+        transformed_run = dict(
+            zip([' '.join([str(c) for c in k]) for k in ranked_runs[metric].keys()], ranked_runs[metric].values()))
         with open(os.path.join(base_directory, metric, dataset + '.json'), 'w') as file:
             json.dump(transformed_run, file, indent=4)
 
@@ -420,14 +424,14 @@ import re
 
 
 def extract_info(dataset):
-        match = re.search("exploration_([A-Za-z]+)_(.*)_\d+_\d+_\d+_\d+_\d+(?:_\w+)*.json", dataset)
+    match = re.search("exploration_([A-Za-z]+)_(.*)_\d+_\d+_\d+_\d+_\d+(?:_\w+)*.json", dataset)
 
-        if match:
-            task, dataset_name = match.groups()
+    if match:
+        task, dataset_name = match.groups()
 
-            return task, dataset_name
-        else:
-            return None
+        return task, dataset_name
+    else:
+        return None
 
 
 def remove_datetime(dataset):
@@ -443,8 +447,9 @@ def remove_datetime(dataset):
 def create_tables(ranks, metric_type):
     tables = []
     for dataset in ranks:
-        table_start = '\\begin{table}[H]\n\\tiny\n\\centering\n'
-        table_end = '\\caption{' + dataset.replace('_', '\_') + ' - ' + metric_type.replace('_', '\_') + '}\\end{table}\n'
+        table_start = '\\begin{table}[!h]\n\\tiny\n\\centering\n'
+        table_end = '\\caption{' + dataset.replace('_', '\_') + ' - ' + metric_type.replace('_',
+                                                                                            '\_') + '}\\end{table}\n'
         subtable_separator = '\\quad\n'
         positive_teacher_indicator = '$\\times$'
         subtables = []
@@ -452,8 +457,8 @@ def create_tables(ranks, metric_type):
             for metric in ranks[dataset]:
                 subtable_start = '\\begin{tabular}{cccc}\n' \
                                  '\\multicolumn{4}{c}{\\scriptsize\\textbf{' + metric.replace('_', '\_') + '}} \\\\\n' \
-                                   '\\hline\n' \
-                                   '\\ & \\textbf{Encoder} & \\textbf{Generator} & \\textbf{T} \\\\\n'
+                                                                                                           '\\hline\n' \
+                                                                                                           '\\ & \\textbf{Encoder} & \\textbf{Generator} & \\textbf{T} \\\\\n'
                 subtable_end = '\\hline\n' \
                                '\\end{tabular}\n'
                 rows = []
@@ -477,8 +482,8 @@ def create_tables(ranks, metric_type):
             for metric in ranks[dataset]:
                 subtable_start = '\\begin{tabular}{ccc}\n' \
                                  '\\multicolumn{3}{c}{\\scriptsize\\textbf{' + metric.replace('_', '\_') + '}} \\\\\n' \
-                                  '\\hline\n' \
-                                  '\\ & \\textbf{Encoder} & \\textbf{Generator} \\\\\n'
+                                                                                                           '\\hline\n' \
+                                                                                                           '\\ & \\textbf{Encoder} & \\textbf{Generator} \\\\\n'
                 subtable_end = '\\hline\n' \
                                '\\end{tabular}\n'
                 rows = []
@@ -502,6 +507,18 @@ def create_tables(ranks, metric_type):
     return tables
 
 
+def remove_teacher_only_runs(rankings):
+    if len(list(rankings.keys())[0]) != 3:
+        return rankings
+
+    rankings = rankings.copy()
+    for rank in list(rankings.keys()):
+        if rank[1] == 'nan' and (rank[2] == 'LGBMClassifier' or rank[2] == 'LGBMRegressor'):
+            del rankings[rank]
+
+    return rankings
+
+
 def format_first_n_ranks(directory, n):
     metric_paths = get_all_directories_in_path(directory)
 
@@ -513,7 +530,6 @@ def format_first_n_ranks(directory, n):
                 machine_learning_efficacy_metric = False
         if machine_learning_efficacy_metric:
             machine_learning_efficacy_metric_paths.append(metric)
-
 
     statistic_metric_paths = []
     for metric in metric_paths:
@@ -546,7 +562,8 @@ def format_first_n_ranks(directory, n):
             dataset_name = remove_datetime(extract_info(dataset)[1])
             if dataset_name not in ranked_machine_learning_efficacy:
                 ranked_machine_learning_efficacy[dataset_name] = {}
-            ranked_machine_learning_efficacy[dataset_name][os.path.basename(metric)] = list(reverse_sorted_ranks.keys())[0:n]
+            ranked_machine_learning_efficacy[dataset_name][os.path.basename(metric)] = list(
+                reverse_sorted_ranks.keys())[0:n]
 
     ranked_statistical_metrics = {}
     for metric in statistic_metric_paths:
@@ -594,7 +611,7 @@ def format_first_n_ranks(directory, n):
             for prefix in ['f1', 'r2']:
                 if metric.startswith(prefix):
                     ranked_privacy_metrics_for_optimization_metric[dataset][metric] = \
-                    ranked_privacy_metrics[dataset][metric]
+                        ranked_privacy_metrics[dataset][metric]
 
     # tables = create_tables(ranked_machine_learning_efficacy, 'machine learning efficacy')
     # print('\n\n'.join(tables))
@@ -602,6 +619,325 @@ def format_first_n_ranks(directory, n):
     # print('\n\n'.join(tables))
     tables = create_tables(ranked_privacy_metrics, 'privacy preservability')
     print('\n\n'.join(tables))
+
+
+def get_top_n(ranking, n):
+    sorted_ranking = {k: v for k, v in sorted(ranking.items(), key=lambda item: item[1], reverse=True)}
+    return list(sorted_ranking.keys())[0:n]
+
+
+def find_top_n_occurences_by_component(directory, n, grouping, requested_metrics):
+    metric_paths = get_all_directories_in_path(directory)
+
+    requested_metric_paths = []
+    for metric in metric_paths:
+        requested = False
+        for desired_metric in requested_metrics:
+            if metric.endswith(desired_metric):
+                requested = True
+        if requested:
+            requested_metric_paths.append(metric)
+    metric_paths = requested_metric_paths
+
+    top_n_rankings = {}
+    for metric in metric_paths:
+        rankings = load_ranks(metric)
+        top_n_rankings[metric] = {}
+        for dataset in rankings:
+            top_n_rankings[metric][dataset] = get_top_n(remove_teacher_only_runs(rankings[dataset]), n)
+
+    tuple_index = None
+    if grouping == 'encoder':
+        tuple_index = 0
+    elif grouping == 'generator':
+        tuple_index = 1
+
+    if tuple_index == None:
+        print('invalid component')
+        exit(1)
+
+    top_n_occurences = {}
+    for metric in top_n_rankings:
+        top_n_occurences[metric] = {}
+        for dataset in top_n_rankings[metric]:
+            for entry in top_n_rankings[metric][dataset]:
+                if entry[tuple_index] not in top_n_occurences[metric]:
+                    top_n_occurences[metric][entry[tuple_index]] = 0
+                top_n_occurences[metric][entry[tuple_index]] = top_n_occurences[metric][entry[tuple_index]] + 1
+
+    top_n_occurences = {os.path.basename(k): v for k, v in top_n_occurences.items()}
+
+    metrics = list(top_n_occurences.keys())
+    datasets = []
+    for metric in top_n_occurences:
+        datasets.extend(list(top_n_occurences[metric].keys()))
+    datasets = list(set(datasets))
+
+    result_matrix = np.ndarray((len(datasets), len(metrics)))
+    for i in range(len(datasets)):
+        for j in range(len(metrics)):
+            if datasets[i] in top_n_occurences[metrics[j]]:
+                result_matrix[i][j] = top_n_occurences[metrics[j]][datasets[i]]
+            else:
+                result_matrix[i][j] = 0
+
+    sum_per_metric = np.sum(result_matrix, axis=0)
+    sum_per_dataset = np.sum(result_matrix, axis=1)
+    metrics = [v.replace('neg_mean_absolute_error', 'mae') for v in metrics]
+    metrics = [v.replace('_', '\_') for v in metrics]
+    datasets = ['$-$' if v == 'nan' else v for v in datasets]
+    datasets = [v.replace('_', '\_') for v in datasets]
+
+    table_start = '\\begin{table}[!h]\n\\small\n\\centering\n' \
+                  '\\begin{tabular}{c|' + 'c' * len(metrics) + '|c}\n' \
+                  '\\ & ' + ' & '.join(['' + m + '' for m in metrics]) + ' & \\textbf{total} \\\\\n' \
+                  '\\hline\n'
+    table_end = '\\end{tabular}\n'\
+                '\\caption{' + 'Number of times each INSERT was ranked in the top 10 for all regression datasets and metrics.' + '}\n' \
+                '\\end{table}\n'
+
+    rows = []
+    for i in range(len(result_matrix)):
+        row = '' + datasets[i] + '' + ' & ' + ' & '.join([str(int(n)) for n in result_matrix[i]]) + ' & \\textbf{' + str(int(sum_per_dataset[i])) + '} \\\\\n'
+        rows.append(row)
+    rows.append('\\hline\n'
+                '\\textbf{total} & ' + ' & '.join(['\\textbf{' + str(int(n)) + '}' for n in sum_per_metric]) + ' & \\textbf{ ' + str(int(np.sum(sum_per_metric))) + '} \\\\\n')
+
+    table = table_start + ''.join(rows) + table_end
+    print(table)
+
+def find_top_n_occurences(directory, n, encoders, generators, teachers, requested_metrics, not_in=False):
+    metric_paths = get_all_directories_in_path(directory)
+
+    requested_metric_paths = []
+    for metric in metric_paths:
+        requested = False
+        for desired_metric in requested_metrics:
+            if metric.endswith(desired_metric):
+                requested = True
+        if requested:
+            requested_metric_paths.append(metric)
+    metric_paths = requested_metric_paths
+
+    top_n_rankings = {}
+    for metric in metric_paths:
+        rankings = load_ranks(metric)
+        top_n_rankings[metric] = {}
+        for dataset in rankings:
+            top_n_rankings[metric][dataset] = get_top_n(remove_teacher_only_runs(rankings[dataset]), n)
+
+    top_n_occurences = {}
+    for metric in top_n_rankings:
+        top_n_occurences[metric] = {}
+        for dataset in top_n_rankings[metric]:
+            top_n_occurences[metric][dataset] = 0
+            if not_in:
+                if len(top_n_rankings[metric][dataset][0]) == 3:
+                    for encoder, generator, teacher in top_n_rankings[metric][dataset]:
+                        if encoder not in encoders and generator not in generators and teacher not in teachers:
+                            top_n_occurences[metric][dataset] = top_n_occurences[metric][dataset] + 1
+                else:
+                    for encoder, generator in top_n_rankings[metric][dataset]:
+                        if encoder not in encoders and generator not in generators:
+                            top_n_occurences[metric][dataset] = top_n_occurences[metric][dataset] + 1
+            else:
+                if len(top_n_rankings[metric][dataset][0]) == 3:
+                    for encoder, generator, teacher in top_n_rankings[metric][dataset]:
+                        if encoder in encoders or generator in generators or teacher in teachers:
+                            top_n_occurences[metric][dataset] = top_n_occurences[metric][dataset] + 1
+                else:
+                    for encoder, generator in top_n_rankings[metric][dataset]:
+                        if encoder in encoders or generator in generators:
+                            top_n_occurences[metric][dataset] = top_n_occurences[metric][dataset] + 1
+
+    top_n_occurences = {os.path.basename(k): v for k, v in top_n_occurences.items()}
+    for metric in top_n_occurences:
+        top_n_occurences[metric] = {remove_datetime(extract_info(k)[1]): v for k, v in top_n_occurences[metric].items()}
+
+    metrics = list(top_n_occurences.keys())
+    datasets = list(top_n_occurences[list(top_n_occurences.keys())[0]].keys())
+
+    result_matrix = np.ndarray((len(datasets), len(metrics)))
+    for i in range(len(datasets)):
+        for j in range(len(metrics)):
+            result_matrix[i][j] = top_n_occurences[metrics[j]][datasets[i]]
+
+    sum_per_metric = np.sum(result_matrix, axis=0)
+    sum_per_dataset = np.sum(result_matrix, axis=1)
+    metrics = [v.replace('neg_mean_absolute_error', 'mae') for v in metrics]
+    metrics = [v.replace('_', '\_') for v in metrics]
+    datasets = [v.replace('_', '\_') for v in datasets]
+
+    table_start = '\\begin{table}[!h]\n\\small\n\\centering\n' \
+                  '\\begin{tabular}{c|' + 'c' * len(metrics) + '|c}\n' \
+                  '\\ & ' + ' & '.join(['' + m + '' for m in metrics]) + ' & \\textbf{total} \\\\\n' \
+                  '\\hline\n'
+    table_end = '\\end{tabular}\n'\
+                '\\caption{' + 'Number of times a INSERT was in the top 10 for each dataset and metric.' + '}\\end{table}\n'
+
+    rows = []
+    for i in range(len(result_matrix)):
+        row = '' + datasets[i] + '' + ' & ' + ' & '.join([str(int(n)) for n in result_matrix[i]]) + ' & \\textbf{' + str(int(sum_per_dataset[i])) + '} \\\\\n'
+        rows.append(row)
+    rows.append('\\hline\n'
+                '\\textbf{total} & ' + ' & '.join(['\\textbf{' + str(int(n)) + '}' for n in sum_per_metric]) + ' & \\textbf{ ' + str(int(np.sum(sum_per_metric))) + '} \\\\\n')
+
+    table = table_start + ''.join(rows) + table_end
+    print(table)
+
+
+
+
+def aggregate_first_n_ranks(directory, n):
+    metric_paths = get_all_directories_in_path(directory)
+
+    machine_learning_efficacy_metric_paths = []
+    for metric in metric_paths:
+        machine_learning_efficacy_metric = True
+        for suffix in ['_dcr', '_diff_corr', '_jsd', '_nndr', '_wd']:
+            if metric.endswith(suffix):
+                machine_learning_efficacy_metric = False
+        if machine_learning_efficacy_metric:
+            machine_learning_efficacy_metric_paths.append(metric)
+
+    statistic_metric_paths = []
+    for metric in metric_paths:
+        statistic_metric = False
+        for suffix in ['_jsd', '_wd', '_diff_corr']:
+            if metric.endswith(suffix):
+                statistic_metric = True
+        if statistic_metric:
+            statistic_metric_paths.append(metric)
+
+    privacy_metric_paths = []
+    for metric in metric_paths:
+        privacy_metric = False
+        for suffix in ['_dcr', '_nndr']:
+            if metric.endswith(suffix):
+                privacy_metric = True
+        if privacy_metric:
+            privacy_metric_paths.append(metric)
+
+    ranked_machine_learning_efficacy = {}
+    for metric in machine_learning_efficacy_metric_paths:
+        ranks = load_ranks(metric)
+        for dataset in ranks:
+            reverse_sorted_ranks = dict(sorted(ranks[dataset].items(), key=operator.itemgetter(1), reverse=True))
+            keys = list(reverse_sorted_ranks.keys())
+            for k in keys:
+                if k[1] == 'nan' and (k[2] == 'LGBMClassifier' or k[2] == 'LGBMRegressor'):
+                    del reverse_sorted_ranks[k]
+
+            dataset_name = remove_datetime(extract_info(dataset)[1])
+            if dataset_name not in ranked_machine_learning_efficacy:
+                ranked_machine_learning_efficacy[dataset_name] = {}
+            ranked_machine_learning_efficacy[dataset_name][os.path.basename(metric)] = list(
+                reverse_sorted_ranks.keys())[0:n]
+
+    ranked_statistical_metrics = {}
+    for metric in statistic_metric_paths:
+        ranks = load_ranks(metric)
+        for dataset in ranks:
+            reverse_sorted_ranks = dict(sorted(ranks[dataset].items(), key=operator.itemgetter(1), reverse=True))
+            keys = list(reverse_sorted_ranks.keys())
+            # for k in keys:
+            #     if k[0] != 'nan':
+            #         del reverse_sorted_ranks[k]
+
+            dataset_name = remove_datetime(extract_info(dataset)[1])
+            if dataset_name not in ranked_statistical_metrics:
+                ranked_statistical_metrics[dataset_name] = {}
+            ranked_statistical_metrics[dataset_name][os.path.basename(metric)] = list(reverse_sorted_ranks.keys())[0:n]
+
+    ranked_privacy_metrics = {}
+    for metric in privacy_metric_paths:
+        ranks = load_ranks(metric)
+        for dataset in ranks:
+            reverse_sorted_ranks = dict(sorted(ranks[dataset].items(), key=operator.itemgetter(1), reverse=True))
+            keys = list(reverse_sorted_ranks.keys())
+            # for k in keys:
+            #     if k[0] != 'nan':
+            #         del reverse_sorted_ranks[k]
+
+            dataset_name = remove_datetime(extract_info(dataset)[1])
+            if dataset_name not in ranked_privacy_metrics:
+                ranked_privacy_metrics[dataset_name] = {}
+            ranked_privacy_metrics[dataset_name][os.path.basename(metric)] = list(reverse_sorted_ranks.keys())[0:n]
+
+    ranked_statistical_metrics_for_optimization_metric = {}
+    for dataset in ranked_statistical_metrics:
+        ranked_statistical_metrics_for_optimization_metric[dataset] = {}
+        for metric in ranked_statistical_metrics[dataset]:
+            for prefix in ['f1', 'r2']:
+                if metric.startswith(prefix):
+                    ranked_statistical_metrics_for_optimization_metric[dataset][metric] = \
+                        ranked_statistical_metrics[dataset][metric]
+
+    ranked_privacy_metrics_for_optimization_metric = {}
+    for dataset in ranked_privacy_metrics:
+        ranked_privacy_metrics_for_optimization_metric[dataset] = {}
+        for metric in ranked_privacy_metrics[dataset]:
+            for prefix in ['f1', 'r2']:
+                if metric.startswith(prefix):
+                    ranked_privacy_metrics_for_optimization_metric[dataset][metric] = \
+                        ranked_privacy_metrics[dataset][metric]
+
+    print(ranked_machine_learning_efficacy)
+
+
+def string_combinations(list_1, list_2):
+    if not list_1:
+        return list_2
+    if not list_2:
+        return list_1
+
+    results = []
+    for a in list_1:
+        for b in list_2:
+            results.append(a + b)
+    return results
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def get_run_time_plots(run_directory):
+    directory_paths = get_all_directories_in_path(run_directory)
+    run_times_per_dataset = pd.DataFrame()
+    for directory_path in directory_paths:
+        dataset_csv_path = get_first_csv_in_directory(directory_path)
+        if not dataset_csv_path:
+            continue
+        dataset = load_dataset(dataset_csv_path)
+        dataset = preprocess(dataset)
+        run_times_per_dataset = run_times_per_dataset.append(dataset.groupby(['dataset', 'generator', 'random_state']).mean().reset_index()[['dataset', 'generator', 'run_time', 'random_state']])
+    print(run_times_per_dataset)
+
+    f, ax = plt.subplots(figsize=(7, 6))
+    # Plot the orbital period with horizontal boxes
+    plot = sns.boxplot(x="run_time", y="generator", data=dataset,
+                whis=[0, 100], width=.6, palette="vlag")
+    plot.set_xscale("log")
+    # ax.xaxis.grid(True)
+    # ax.set(ylabel="")
+    sns.despine(trim=True, left=True)
+    fig = plot.get_figure()
+    fig.savefig(os.path.join(run_directory, os.path.basename(run_directory) + "_run_times_log.png"), bbox_inches='tight')
+
+    plt.clf()
+
+    f, ax = plt.subplots(figsize=(7, 6))
+    # Plot the orbital period with horizontal boxes
+    plot = sns.boxplot(x="run_time", y="generator", data=dataset,
+                       whis=[0, 100], width=.6, palette="vlag")
+    # plot.set_xscale("log")
+    # ax.xaxis.grid(True)
+    # ax.set(ylabel="")
+    sns.despine(trim=True, left=True)
+    fig = plot.get_figure()
+    fig.savefig(os.path.join(run_directory, os.path.basename(run_directory) + "_run_times.png"), bbox_inches='tight')
+
+    exit(1)
 
 
 def run(interrupt=True):
@@ -628,9 +964,17 @@ def run(interrupt=True):
     #         with open(os.path.join(run_directory, 'rankings', metric + '.json'), 'w') as file:
     #             json.dump(ranks_of_ranks, file, indent=4)
 
-    format_first_n_ranks(run_directory, 20)
-
-
+    # format_first_n_ranks(run_directory, 20)
+    # aggregate_first_n_ranks(run_directory, 20)
+    # find_top_n_occurences(run_directory, 10, [], ['nan'], [],
+    #                       ['neg_mean_absolute_error', 'r2', 'accuracy', 'roc_auc', 'f1', 'f1_macro'], not_in=True)
+    find_top_n_occurences_by_component(run_directory, 10, 'encoder',
+                                       ['neg_mean_absolute_error', 'r2', 'accuracy', 'roc_auc', 'f1', 'f1_macro'])
+    # find_top_n_occurences_by_component(run_directory, 10, 'generator', ['neg_mean_absolute_error', 'r2', 'accuracy', 'roc_auc', 'f1', 'f1_macro'])
+    # get_run_time_plots(run_directory)
+    # find_top_n_occurences_by_component(run_directory, 10, 'generator', string_combinations(['f1', 'f1_macro', 'r2'], ['_jsd']))
+    # find_top_n_occurences_by_component(run_directory, 10, 'generator', string_combinations(['f1', 'f1_macro', 'r2'], ['_jsd', '_wd', '_diff_corr']))
+    # find_top_n_occurences_by_component(run_directory, 10, 'generator', string_combinations(['f1', 'f1_macro', 'r2'], ['_dcr', '_nndr']))
 
 if __name__ == '__main__':
     import argparse
@@ -645,7 +989,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     run(args.interrupt)
-
 
 # dataset = loaded_datasets[absolute_path]['csv']
 # dataset = dataset[~dataset['generator'].isin(user_input)]
